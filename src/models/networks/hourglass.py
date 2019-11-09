@@ -291,6 +291,6 @@ class HourglassNet(exkp):
             kp_layer=residual, cnv_dim=256
         )
 
-def get_large_hourglass_net(heads):
-  model = HourglassNet(heads, 2)
+def get_large_hourglass_net(heads, n_stacks=2):
+  model = HourglassNet(heads, n_stacks)
   return model

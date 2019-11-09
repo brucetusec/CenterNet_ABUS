@@ -9,9 +9,8 @@ def main():
         'hm': 2,
         'wh': 2
     }
-    model = get_large_hourglass_net(heads)
-    print(model)
-
+    model = get_large_hourglass_net(heads, n_stacks=1)
+    print(model.state_dict().keys())
 
 
 if __name__ == '__main__':
