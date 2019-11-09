@@ -5,14 +5,10 @@
 # Licensed under the BSD 3-Clause License
 # ------------------------------------------------------------------------------
 
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import numpy as np
 import torch
 import torch.nn as nn
+from .basic import BasicModule
 
 class convolution(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_bn=True):
@@ -141,21 +137,23 @@ class kp_module(nn.Module):
             3, curr_dim, next_dim, curr_mod,
             layer=layer, **kwargs
         )
-        self.low2 = kp_module(
-            n - 1, dims[1:], modules[1:], layer=layer, 
-            make_up_layer=make_up_layer, 
-            make_low_layer=make_low_layer,
-            make_hg_layer=make_hg_layer,
-            make_hg_layer_revr=make_hg_layer_revr,
-            make_pool_layer=make_pool_layer,
-            make_unpool_layer=make_unpool_layer,
-            make_merge_layer=make_merge_layer,
-            **kwargs
-        ) if self.n > 1 else \
-        make_low_layer(
-            3, next_dim, next_dim, next_mod,
-            layer=layer, **kwargs
-        )
+        if self.n > 1:
+            self.low2 = kp_module(
+                n - 1, dims[1:], modules[1:], layer=layer, 
+                make_up_layer=make_up_layer, 
+                make_low_layer=make_low_layer,
+                make_hg_layer=make_hg_layer,
+                make_hg_layer_revr=make_hg_layer_revr,
+                make_pool_layer=make_pool_layer,
+                make_unpool_layer=make_unpool_layer,
+                make_merge_layer=make_merge_layer,
+                **kwargs
+            )
+        else:
+            make_low_layer(
+                3, next_dim, next_dim, next_mod,
+                layer=layer, **kwargs
+            )
         self.low3 = make_hg_layer_revr(
             3, next_dim, curr_dim, curr_mod,
             layer=layer, **kwargs
@@ -173,12 +171,12 @@ class kp_module(nn.Module):
         up2  = self.up2(low3)
         return self.merge(up1, up2)
 
-class exkp(nn.Module):
+class exkp(BasicModule):
     def __init__(
         self, n, nstack, dims, modules, heads, pre=None, cnv_dim=256, 
-        make_tl_layer=None, make_br_layer=None,
-        make_cnv_layer=make_cnv_layer, make_heat_layer=make_kp_layer,
-        make_tag_layer=make_kp_layer, make_regr_layer=make_kp_layer,
+        make_cnv_layer=make_cnv_layer,
+        make_heat_layer=make_kp_layer,
+        make_regr_layer=make_kp_layer,
         make_up_layer=make_layer, make_low_layer=make_layer, 
         make_hg_layer=make_layer, make_hg_layer_revr=make_layer_revr,
         make_pool_layer=make_pool_layer, make_unpool_layer=make_unpool_layer,
@@ -288,13 +286,11 @@ class HourglassNet(exkp):
 
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
-            make_tl_layer=None,
-            make_br_layer=None,
             make_pool_layer=make_pool_layer,
             make_hg_layer=make_hg_layer,
             kp_layer=residual, cnv_dim=256
         )
 
-def get_large_hourglass_net(num_layers, heads, head_conv):
+def get_large_hourglass_net(heads):
   model = HourglassNet(heads, 2)
   return model
