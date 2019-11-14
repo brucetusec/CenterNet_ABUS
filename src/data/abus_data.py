@@ -42,3 +42,9 @@ class AbusNpyFormat(data.Dataset):
 
     def __len__(self):
         return len(self.gt)
+
+    def getScaleZXY(self, index, size):
+        # Size should be a 3-tuple, e.g.(640,640,160)
+        line = self.gt[index]
+        line = line.split(',', 4)
+        return (size[0]/int(line[1]),size[1]/int(line[3]),size[2]/int(line[2]))
