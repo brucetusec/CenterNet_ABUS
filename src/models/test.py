@@ -10,7 +10,8 @@ def main():
         'wh': 2
     }
     model = get_large_hourglass_net(heads, n_stacks=1)
-    print(model.state_dict().keys())
+    #print(model.state_dict().keys())
+    print(model)
 
 
 if __name__ == '__main__':
