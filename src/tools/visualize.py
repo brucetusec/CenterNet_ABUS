@@ -1,24 +1,15 @@
 import os, math, json, sys
-sys.path.append(os.path.join(os.path.abspath(os.pardir),'src'))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import argparse
 import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 from data.abus_data import AbusNpyFormat
 
-
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    '--all_file_list', '-a', type=str, default='',
-    help=''
-)
-parser.add_argument(
-    '--json', '-j', type=str,
-    help=''
-)
 
 parser.add_argument(
-    '--save_dir', '-s', type=str, default='result.npy',
-    help=''
+    '--save_dir', '-s', type=str, required=True,
+    help='Specify where to save visualized volume as series of images.'
 )
 params = parser.parse_args()
 
@@ -29,7 +20,7 @@ def main(root, id):
     np_vol = np.transpose(torch_vol.numpy()[0],(0,2,1))
     scale_zxy = data.getScaleZXY(0,(640,640,160))
     
-    img_dir = os.path.join(os.path.abspath(os.pardir),'result', data.getName(id))
+    img_dir = os.path.join(params.save_dir, data.getName(id))
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
@@ -49,6 +40,7 @@ def main(root, id):
     return
 
 if __name__ == '__main__':
-    root='../data/sys_ucc/'
+    root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), 'data/sys_ucc/')
+    
     for i in range(349):
-        main(root,i)
+        main(root, i)
