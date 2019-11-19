@@ -48,3 +48,8 @@ class AbusNpyFormat(data.Dataset):
         line = self.gt[index]
         line = line.split(',', 4)
         return (size[0]/int(line[1]),size[1]/int(line[3]),size[2]/int(line[2]))
+
+    def getName(self, index):
+        line = self.gt[index]
+        line = line.split(',', 4)
+        return line[0].replace('/', '_')

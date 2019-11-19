@@ -23,16 +23,16 @@ parser.add_argument(
 params = parser.parse_args()
 
 def main(root, id):
-    img_dir = os.path.join(os.path.abspath(os.pardir),'result',str(id))
-    if not os.path.exists(img_dir):
-        os.makedirs(img_dir)
-
     data = AbusNpyFormat(root, train=False, validation=False)
     torch_vol, boxes = data.__getitem__(id)
     # Z,Y,X -> Z,X,Y (640,640,160)
     np_vol = np.transpose(torch_vol.numpy()[0],(0,2,1))
     scale_zxy = data.getScaleZXY(0,(640,640,160))
     
+    img_dir = os.path.join(os.path.abspath(os.pardir),'result', data.getName(id))
+    if not os.path.exists(img_dir):
+        os.makedirs(img_dir)
+
     for i in range(np.shape(np_vol)[2]):
         img = Image.fromarray(np_vol[:,:,i], 'L')
         img = img.convert(mode='RGB')
@@ -50,5 +50,5 @@ def main(root, id):
 
 if __name__ == '__main__':
     root='../data/sys_ucc/'
-    for i in range(20):
+    for i in range(349):
         main(root,i)
