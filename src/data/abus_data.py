@@ -26,7 +26,7 @@ class AbusNpyFormat(data.Dataset):
         line = line.split(',', 4)
 
         data = np.load(self.root + 'converted_640_160_640/' + line[0].replace('/', '_'))
-        data = torch.from_numpy(data).unsqueeze(0)
+        data = torch.from_numpy(data).unsqueeze(0).float()
         true_boxes = line[-1].split(' ')
         true_boxes = list(map(lambda box: box.split(','), true_boxes))
         true_boxes = [{

@@ -45,7 +45,8 @@ class residual(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_bn=True):
         super(residual, self).__init__()
 
-        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(1, 1, 1), stride=(stride, stride, stride), bias=not with_bn)
+        pad = (k - 1) // 2
+        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_bn)
         self.bn1   = nn.BatchNorm3d(out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
@@ -121,7 +122,7 @@ class kp_module(nn.Module):
         super(kp_module, self).__init__()
 
         self.n   = n
-
+        print(n, modules)
         curr_mod = modules[0]
         next_mod = modules[1]
 
@@ -150,7 +151,7 @@ class kp_module(nn.Module):
                 **kwargs
             )
         else:
-            make_low_layer(
+            self.low2 = make_low_layer(
                 3, next_dim, next_dim, next_mod,
                 layer=layer, **kwargs
             )
@@ -164,11 +165,22 @@ class kp_module(nn.Module):
 
     def forward(self, x):
         up1  = self.up1(x)
+        print(up1.shape)
+
         max1 = self.max1(x)
+        print(max1.shape)
+
         low1 = self.low1(max1)
+        print(low1.shape)
+
         low2 = self.low2(low1)
+        print(low2.shape)
+
         low3 = self.low3(low2)
+        print(low3.shape)
+
         up2  = self.up2(low3)
+        print(up2.shape)
         return self.merge(up1, up2)
 
 class exkp(BasicModule):
@@ -191,8 +203,8 @@ class exkp(BasicModule):
         curr_dim = dims[0]
 
         self.pre = nn.Sequential(
-            convolution(7, 3, 128, stride=2),
-            residual(3, 128, 256, stride=2)
+            convolution(7, 1, 32, stride=2),
+            residual(3, 32, 64, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
@@ -253,22 +265,22 @@ class exkp(BasicModule):
         inter = self.pre(image)
         outs  = []
 
-        for ind in range(self.nstack):
-            kp_, cnv_  = self.kps[ind], self.cnvs[ind]
+        for i in range(self.nstack):
+            kp_, cnv_  = self.kps[i], self.cnvs[i]
             kp  = kp_(inter)
             cnv = cnv_(kp)
 
             out = {}
             for head in self.heads:
-                layer = self.__getattr__(head)[ind]
+                layer = self.__getattr__(head)[i]
                 y = layer(cnv)
                 out[head] = y
             
             outs.append(out)
-            if ind < self.nstack - 1:
-                inter = self.inters_[ind](inter) + self.cnvs_[ind](cnv)
+            if i < self.nstack - 1:
+                inter = self.inters_[i](inter) + self.cnvs_[i](cnv)
                 inter = self.relu(inter)
-                inter = self.inters[ind](inter)
+                inter = self.inters[i](inter)
         return outs
 
 
@@ -279,18 +291,18 @@ def make_hg_layer(kernel, dim0, dim1, mod, layer=convolution, **kwargs):
 
 
 class HourglassNet(exkp):
-    def __init__(self, heads, num_stacks=2):
-        n       = 5
-        dims    = [256, 256, 384, 384, 384, 512]
-        modules = [2, 2, 2, 2, 2, 4]
+    def __init__(self, heads, num_stacks=1):
+        n       = 2
+        dims    = [64, 128, 256]
+        modules = [2, 2, 4]
 
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
             make_pool_layer=make_pool_layer,
             make_hg_layer=make_hg_layer,
-            kp_layer=residual, cnv_dim=256
+            kp_layer=residual, cnv_dim=64
         )
 
-def get_large_hourglass_net(heads, n_stacks=2):
+def get_large_hourglass_net(heads, n_stacks=1):
   model = HourglassNet(heads, n_stacks)
   return model
