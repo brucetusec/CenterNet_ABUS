@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# This code is base on 
+# This code is based on 
 # CornerNet (https://github.com/princeton-vl/CornerNet)
 # Copyright (c) 2018, University of Michigan
 # Licensed under the BSD 3-Clause License
@@ -235,7 +235,7 @@ class exkp(BasicModule):
             ) for _ in range(nstack - 1)
         ])
 
-        ## keypoint heatmaps
+        ## Output heads: hm = Heat map, wh = Width-Height, off = Offset
         for head in heads.keys():
             if 'hm' in head:
                 module =  nn.ModuleList([
