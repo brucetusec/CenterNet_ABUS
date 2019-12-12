@@ -117,12 +117,15 @@ class kp_module(nn.Module):
         make_up_layer=make_layer, make_low_layer=make_layer,
         make_hg_layer=make_layer, make_hg_layer_revr=make_layer_revr,
         make_pool_layer=make_pool_layer, make_unpool_layer=make_unpool_layer,
-        make_merge_layer=make_merge_layer, **kwargs
+        make_merge_layer=make_merge_layer, debug=False,**kwargs
     ):
         super(kp_module, self).__init__()
 
         self.n   = n
-        print(n, modules)
+
+        if debug:
+            print('Current stack:', n, 'Modules:', modules)
+
         curr_mod = modules[0]
         next_mod = modules[1]
 
@@ -148,6 +151,7 @@ class kp_module(nn.Module):
                 make_pool_layer=make_pool_layer,
                 make_unpool_layer=make_unpool_layer,
                 make_merge_layer=make_merge_layer,
+                debug=debug,
                 **kwargs
             )
         else:
@@ -165,22 +169,11 @@ class kp_module(nn.Module):
 
     def forward(self, x):
         up1  = self.up1(x)
-        print(up1.shape)
-
         max1 = self.max1(x)
-        print(max1.shape)
-
         low1 = self.low1(max1)
-        print(low1.shape)
-
         low2 = self.low2(low1)
-        print(low2.shape)
-
         low3 = self.low3(low2)
-        print(low3.shape)
-
         up2  = self.up2(low3)
-        print(up2.shape)
         return self.merge(up1, up2)
 
 class exkp(BasicModule):
@@ -193,9 +186,10 @@ class exkp(BasicModule):
         make_hg_layer=make_layer, make_hg_layer_revr=make_layer_revr,
         make_pool_layer=make_pool_layer, make_unpool_layer=make_unpool_layer,
         make_merge_layer=make_merge_layer, make_inter_layer=make_inter_layer, 
-        kp_layer=residual
+        kp_layer=residual, debug=False
     ):
         super(exkp, self).__init__()
+        self.debug     = debug
 
         self.nstack    = nstack
         self.heads     = heads
@@ -216,7 +210,8 @@ class exkp(BasicModule):
                 make_hg_layer_revr=make_hg_layer_revr,
                 make_pool_layer=make_pool_layer,
                 make_unpool_layer=make_unpool_layer,
-                make_merge_layer=make_merge_layer
+                make_merge_layer=make_merge_layer,
+                debug=self.debug
             ) for _ in range(nstack)
         ])
         self.cnvs = nn.ModuleList([
@@ -261,15 +256,21 @@ class exkp(BasicModule):
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, image):
-        # print('image shape', image.shape)
+        if self.debug:
+            print('Original image:', image.shape)
+
         inter = self.pre(image)
         outs  = []
 
+        if self.debug:
+            print('Preprocessed image:', inter.shape)
         for i in range(self.nstack):
             kp_, cnv_  = self.kps[i], self.cnvs[i]
             kp  = kp_(inter)
             cnv = cnv_(kp)
 
+            if self.debug:
+                print('Before output head:', cnv.shape)
             out = {}
             for head in self.heads:
                 layer = self.__getattr__(head)[i]
@@ -291,7 +292,7 @@ def make_hg_layer(kernel, dim0, dim1, mod, layer=convolution, **kwargs):
 
 
 class HourglassNet(exkp):
-    def __init__(self, heads, num_stacks=1):
+    def __init__(self, heads, num_stacks=1, debug=False):
         n       = 2
         dims    = [64, 128, 256]
         modules = [2, 2, 4]
@@ -300,9 +301,9 @@ class HourglassNet(exkp):
             n, num_stacks, dims, modules, heads,
             make_pool_layer=make_pool_layer,
             make_hg_layer=make_hg_layer,
-            kp_layer=residual, cnv_dim=64
+            kp_layer=residual, cnv_dim=64, debug=debug
         )
 
-def get_large_hourglass_net(heads, n_stacks=1):
-  model = HourglassNet(heads, n_stacks)
+def get_large_hourglass_net(heads, n_stacks=1, debug=False):
+  model = HourglassNet(heads, n_stacks, debug=debug)
   return model

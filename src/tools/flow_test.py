@@ -22,10 +22,10 @@ params = parser.parse_args()
 
 def main():
     heads = {
-        'hm': 2,
-        'wh': 3
+        'hm': 1, # 1-D Probability heat map.
+        'wh': 3  # 3-D x,y,z size regression.
     }
-    model = get_large_hourglass_net(heads, n_stacks=1)
+    model = get_large_hourglass_net(heads, n_stacks=1, debug=True)
     model = model.to(device)
     
     all_data = AbusNpyFormat(root, train=False, validation=False)
@@ -33,6 +33,8 @@ def main():
     data = torch.unsqueeze(data, 0).to(device)
     
     output = model(data)
+    print('Heat map tensor:', output[0]['hm'].shape)
+    print('Height-Width tensor:', output[0]['wh'].shape)
     return
 
 if __name__=='__main__':
