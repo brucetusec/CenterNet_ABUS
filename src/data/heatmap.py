@@ -1,5 +1,8 @@
 import numpy as np
 
+def _embed_matrix():
+    A[r:r+B.shape[0], c:c+B.shape[1]] += B
+
 # Calaulate a adaptive gaussian radius
 def gaussian_radius(det_size, min_overlap=0.7):
     height, width = det_size
@@ -32,3 +35,15 @@ def gaussian2D(shape, sigma=1):
     h = np.exp(-(x * x + y * y) / (2 * sigma * sigma))
     h[h < np.finfo(h.dtype).eps * h.max()] = 0
     return h
+
+def gaussian3D(shape, sigma=1):
+    x, y, z = [(ss - 1.) / 2. for ss in shape]
+    x, y, z = np.ogrid[-x:x+1,-y:y+1,-z:z+1]
+
+    h = np.exp(-(x * x + y * y + z * z) / (2 * sigma * sigma))
+    h[h < np.finfo(h.dtype).eps * h.max()] = 0
+    return h
+
+def gen_3d_heatmap(size, gt_boxes):
+    for bbox in gt_boxes:
+        gaussian3D
