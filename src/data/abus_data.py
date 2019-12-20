@@ -26,16 +26,23 @@ class AbusNpyFormat(data.Dataset):
         line = line.split(',', 4)
 
         data = np.load(self.root + 'converted_640_160_640/' + line[0].replace('/', '_'))
-        data = torch.from_numpy(data).unsqueeze(0).float()
+        data = torch.from_numpy(data).to(torch.uint8)
         true_boxes = line[-1].split(' ')
         true_boxes = list(map(lambda box: box.split(','), true_boxes))
+        true_boxes = [list(map(int, box)) for box in true_boxes]
         true_boxes = [{
             'z_bot': box[0],
             'z_top': box[3],
+            'z_range': box[3] - box[0] + 1,
+            'z_center': (box[0] + box[3]) / 2,
             'y_bot': box[1],
             'y_top': box[4],
+            'y_range': box[4] - box[1] + 1,
+            'y_center': (box[1] + box[4]) / 2,
             'x_bot': box[2],
             'x_top': box[5],
+            'x_range': box[5] - box[2] + 1,
+            'x_center': (box[2] + box[5]) / 2,
         } for box in true_boxes]
 
         return data, true_boxes

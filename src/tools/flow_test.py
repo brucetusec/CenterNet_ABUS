@@ -30,7 +30,7 @@ def main():
     
     all_data = AbusNpyFormat(root, train=False, validation=False)
     data, label = all_data.__getitem__(0)
-    data = torch.unsqueeze(data, 0).to(device)
+    data = data.view(1,1,640,160,640).to(torch.float32).to(device)
     
     output = model(data)
     print('Heat map tensor:', output[0]['hm'].shape)

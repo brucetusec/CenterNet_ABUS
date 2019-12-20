@@ -1,5 +1,6 @@
 data/
 result/
+results/
 !src/data/
 model_weights/
 *pyc
