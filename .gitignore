@@ -5,3 +5,4 @@ results/
 src/data/test/*
 model_weights/
 *pyc
+*_old.py
