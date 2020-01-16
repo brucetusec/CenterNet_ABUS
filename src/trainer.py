@@ -24,56 +24,66 @@ def train(args):
     # TODO: trim codes
     print('Training starts.')
     start_time = time.time()
-    for ep in range(5, args.max_epoch):
+    for epoch in range(self.epoch):
         epoch_start_time = time.time()
-        for idx, (s1_domain, s2_domain, s3_domain, t_domain) in enumerate(zip(*(source_loader+[target_loader]))):
-            if use_cuda:
-                s1_domain[0], s2_domain[0], s3_domain[0], t_domain[0] = \
-                    s1_domain[0].cuda(), s2_domain[0].cuda(), s3_domain[0].cuda(), t_domain[0].cuda()
-                s1_domain[1], s2_domain[1], s3_domain[1], t_domain[1] = \
-                    s1_domain[1].cuda(), s2_domain[1].cuda(), s3_domain[1].cuda(), t_domain[1].cuda()
+        for batch_idx, (sdata, tdata) in enumerate(zip(self.source_loader, self.target_loader)):
 
-            loss_mtl, loss_moe, loss_adv, loss_reg = 0,0,0,0
-            optimizer_e.zero_grad()
-            optimizer_p.zero_grad()
-            sources = [s1_domain, s2_domain, s3_domain]
-            target_feature = extractor(t_domain[0])
-
-            dom_label = torch.ones(target_feature.shape[0], dtype=torch.long).cuda()
-            loss_adv += criterion(adversary(target_feature), dom_label)
-
-            for i in range(3):
-                meta_target = sources[i]
-                feature = extractor(meta_target[0])
-                w, preds = predictor(feature)
-
-                actual_batch_size = meta_target[0].shape[0]
-                dom_label = torch.tensor([]).long()
-                dom_label = dom_label.new_full((actual_batch_size,), i).cuda()
-                loss_reg += criterion_reg(w, dom_label)
-
-                loss_mtl += criterion(preds[i], meta_target[1])
-
-                w = w.unsqueeze(1)
-                pred_multi = torch.stack(preds, dim=1)
-                pred_moe = torch.bmm(w, pred_multi).squeeze(1)
-                loss_moe += criterion(pred_moe, meta_target[1])
-
-                dom_label = torch.zeros(actual_batch_size, dtype=torch.long).cuda()
-                loss_adv += 0.33*criterion(adversary(feature), dom_label)
-
-            total_loss = loss_moe + 0.5*loss_mtl + (1/(1+math.exp(ep//5)))*loss_adv + loss_reg
-            total_loss.backward(retain_graph=True)
-            optimizer_e.step()
-            optimizer_p.step()
-
-
-            if ((idx + 1) % 20) == 0:
-                print("Epoch: [%2d] [%4d], Loss: %.4f" %
-                    (ep, idx, total_loss.item()))
+            sinput, slabel = sdata
+            tinput, _ = tdata
+            sbatch_size = sinput.shape[0]
+            tbatch_size = tinput.shape[0]
             
-        _utils.save(extractor, str(ep)+'_extractor', args.train_type+'-'+args.target_name)
-        _utils.save(predictor, str(ep)+'_predictor', args.train_type+'-'+args.target_name)
+            sdomain_label = torch.ones(sbatch_size)
+            tdomain_label = torch.zeros(tbatch_size)
+            if use_cuda:
+                sinput, slabel, sdomain_label = sinput.cuda(), slabel.cuda(), sdomain_label.cuda()
+                tinput, tdomain_label = tinput.cuda(), tdomain_label.cuda()
+                
+
+            # source domain
+            self.F_optimizer.zero_grad()
+            self.C_optimizer.zero_grad()
+
+            F_ = self.F(sinput)
+            C_ = self.C(F_)
+            C_loss_source = self.CE_loss(C_, slabel)
+            self.train_hist['C_loss_source'].append(C_loss_source.item())
+
+
+            if not self.single_domain:
+                self.D_optimizer.zero_grad()
+                D_ = self.D(F_)
+                D_loss_source = self.BCE_loss(D_, sdomain_label)
+                self.train_hist['D_loss_source'].append(D_loss_source.item())
+
+                # target domain
+                F_ = self.F(tinput)
+                D_ = self.D(F_)
+                D_loss_target = self.BCE_loss(D_, tdomain_label)
+                self.train_hist['D_loss_target'].append(D_loss_target.item())                
+                total_loss = D_loss_source + D_loss_target + C_loss_source
+            else:
+                total_loss = C_loss_source
+
+            total_loss.backward()
+
+            self.F_optimizer.step()
+            self.C_optimizer.step()
+
+
+            if not self.single_domain:
+                self.D_optimizer.step()
+                if ((batch_idx + 1) % 20) == 0:
+                    print("Epoch: [%2d] [%4d/%4d] D_loss_s: %.4f, D_loss_t: %.4f, C_loss: %.4f" %
+                        ((epoch + 1), (batch_idx + 1), self.batch_num+1, D_loss_source.item(), D_loss_target.item(), C_loss_source.item()))
+            else:
+                if ((batch_idx + 1) % 20) == 0:
+                    print("Epoch: [%2d] [%4d/%4d], C_loss: %.4f" %
+                        ((epoch + 1), (batch_idx + 1), self.batch_num+1, C_loss_source.item()))
+
+        self.train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
+        if (epoch % 2) == 0:
+            self.save(epoch)
 
         print('Epoch exec time: {}'.format(time.time() - epoch_start_time))
 
