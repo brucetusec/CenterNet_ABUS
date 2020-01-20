@@ -2,7 +2,7 @@ data/
 result/
 results/
 !src/data/
-src/data/test/*
+src/test/*
 model_weights/
 *pyc
 *_old.py

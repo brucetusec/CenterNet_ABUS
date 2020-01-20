@@ -3,6 +3,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import argparse
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 from data.abus_data import AbusNpyFormat
 from models.networks.hourglass import get_large_hourglass_net
 
@@ -22,21 +23,23 @@ params = parser.parse_args()
 
 def main():
     heads = {
-        'hm': 1, # 1-D Probability heat map.
-        'wh': 3  # 3-D x,y,z size regression.
+        'hm': 1, # 1 channel Probability heat map.
+        'wh': 3  # 3 channel x,y,z size regression.
     }
     model = get_large_hourglass_net(heads, n_stacks=1, debug=True)
     model = model.to(device)
-    
-    all_data = AbusNpyFormat(root, train=False, validation=False)
-    data, label = all_data.__getitem__(0)
-    data = data.view(1,1,640,160,640).to(torch.float32).to(device)
-    
-    output = model(data)
-    print('Heat map tensor:', output[0]['hm'].shape)
-    print('Height-Width tensor:', output[0]['wh'].shape)
-    return
+
+    trainset = AbusNpyFormat(root=root)
+    trainset_loader = DataLoader(trainset, batch_size=1, shuffle=True, num_workers=0)
+    for batch_idx, (data_img, data_gt, _, _, _) in enumerate(trainset_loader):
+        data_img = data_img.to(device)
+        print('Batch:', data_img.shape)
+        output = model(data_img)
+        print('Output length:', len(output))
+        print('Heat map tensor:', output[0]['hm'].shape)
+        print('Height-Width tensor:', output[0]['wh'].shape)
+        return
 
 if __name__=='__main__':
-    root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), 'data/sys_ucc/')
+    root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
     main()

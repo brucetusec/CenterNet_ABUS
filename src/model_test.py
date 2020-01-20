@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 import os
 import time
-from networks.hourglass import get_large_hourglass_net
+from models.networks.hourglass import get_large_hourglass_net
 
 def main():
     heads = {
-        'hm': 2,
-        'wh': 2
+        'hm': 1,
+        'wh': 3
     }
     model = get_large_hourglass_net(heads, n_stacks=1)
     #print(model.state_dict().keys())

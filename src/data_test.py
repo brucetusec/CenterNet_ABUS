@@ -1,16 +1,17 @@
-import os
+import os, sys
 import numpy as np
-import sys
-np.set_printoptions(threshold=sys.maxsize)
+import torch
 from PIL import Image, ImageFont, ImageDraw
-from heatmap import gen_3d_heatmap, gen_3d_hw
-from abus_data import AbusNpyFormat
+from data.heatmap import gen_3d_heatmap, gen_3d_hw
+from data.abus_data import AbusNpyFormat
+np.set_printoptions(threshold=sys.maxsize)
 
 def draw_slice(volume, dir, label=None):
     if not os.path.exists(dir):
         os.makedirs(dir)
-    min, max = np.min(volume), np.max(volume)
+    min, max = torch.min(volume), torch.max(volume)
     volume = ((volume-min)/max)*255
+    volume = volume.cpu().detach().numpy()
     for i in range(np.shape(volume)[1]):
         img = Image.fromarray(volume[:,i,:].astype(np.uint8), 'L')
         img = img.convert(mode='RGB')
@@ -23,29 +24,22 @@ def draw_slice(volume, dir, label=None):
 
 def main():
     all_data = AbusNpyFormat(root, train=False, validation=False)
-    data, label = all_data.__getitem__(6)
+    data, hm, wh_x, wh_y, wh_z = all_data.__getitem__(6)
     print('Dataset size:', all_data.__len__())
     print('Shape of data:', data.size())
-    print('Number of boxes in data:', len(label))
 
-    scale=4
-
-    hm = gen_3d_heatmap((640,160,640), label, scale)
-    #hm = np.transpose(hm, (2,1,0))
     tmp_dir = os.path.join(os.path.dirname(__file__),'test','hm')
-    draw_slice(hm, tmp_dir, label)
-
-    hw_x, hw_y, hw_z = gen_3d_hw((640,160,640), label, scale)
-    tmp_dir = os.path.join(os.path.dirname(__file__),'test','hw_x')
-    draw_slice(hw_x, tmp_dir)
-    tmp_dir = os.path.join(os.path.dirname(__file__),'test','hw_y')
-    draw_slice(hw_y, tmp_dir)
-    tmp_dir = os.path.join(os.path.dirname(__file__),'test','hw_z')
-    draw_slice(hw_z, tmp_dir)
+    draw_slice(hm[0], tmp_dir)
+    tmp_dir = os.path.join(os.path.dirname(__file__),'test','wh_x')
+    draw_slice(wh_x[0], tmp_dir)
+    tmp_dir = os.path.join(os.path.dirname(__file__),'test','wh_y')
+    draw_slice(wh_y[0], tmp_dir)
+    tmp_dir = os.path.join(os.path.dirname(__file__),'test','wh_z')
+    draw_slice(wh_z[0], tmp_dir)
 
     return
 
 if __name__ == '__main__':
-    root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), 'data/sys_ucc/')
+    root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
 
     main()
