@@ -1,7 +1,10 @@
 import numpy as np
 
-def _embed_matrix(A, B, start_point):
-    A[start_point[0]:start_point[0]+B.shape[0], start_point[1]:start_point[1]+B.shape[1], start_point[2]:start_point[2]+B.shape[2]] += B
+def _embed_matrix(size, B, start_point):
+    A = np.zeros(size, dtype=np.float32)
+    C = A[start_point[0]:start_point[0]+B.shape[0], start_point[1]:start_point[1]+B.shape[1], start_point[2]:start_point[2]+B.shape[2]]
+    print('C:', C.shape, 'B:', B.shape, 'start:', start_point)
+    np.add(C, B, C)
     return A
 
 # Create a 3D numpy array simulating 3D gaussian dist.
@@ -19,13 +22,13 @@ def gen_3d_heatmap(size, gt_boxes, scale=1):
 
     for bbox in gt_boxes:
         half_width = (int((bbox['z_range']/2)//scale), int((bbox['y_range']/2)//scale), int((bbox['x_range']/2)//scale))
+        # min width must be at least 1
         half_width = [w if w > 0 else 1 for w in half_width]
+        # print('center:', (bbox['z_center']//scale, bbox['y_center']//scale, bbox['x_center']//scale), 'half-w:', half_width)
+
         gauss_3d = gaussian3D(half_width)
-        layer = np.zeros(size, dtype=np.float32)
-        start_point = (int(bbox['z_center']//scale - half_width[0]//2), int(bbox['y_center']//scale - half_width[1]//2), int(bbox['x_center']//scale - half_width[2]//2))
-        end_point = (int(bbox['z_center']//scale + half_width[0]//2), int(bbox['y_center']//scale + half_width[1]//2), int(bbox['x_center']//scale + half_width[2]//2))
-        print('start:', start_point, 'end:', end_point, 'center:', (bbox['z_center']//scale, bbox['y_center']//scale, bbox['x_center']//scale), 'half-w:', half_width)
-        layer = _embed_matrix(layer, gauss_3d, start_point)
+        start_point = (int(bbox['z_bot']//scale + half_width[0]//2), int(bbox['y_bot']//scale + half_width[1]//2), int(bbox['x_bot']//scale + half_width[2]//2))
+        layer = _embed_matrix(size, gauss_3d, start_point)
         hm = np.maximum(hm, layer)
 
     return hm
@@ -40,19 +43,16 @@ def gen_3d_hw(size, gt_boxes, scale=1):
     for bbox in gt_boxes:
         shape = (int((bbox['z_range'])//scale), int((bbox['y_range'])//scale), int((bbox['x_range'])//scale))
         start_point = (int(bbox['z_bot']//scale), int(bbox['y_bot']//scale), int(bbox['x_bot']//scale ))
-        layer = np.zeros(size, dtype=np.float32)
         chunk = np.full(shape, shape[2], dtype=np.float32)
-        layer = _embed_matrix(layer, chunk, start_point)
+        layer = _embed_matrix(size, chunk, start_point)
         hw_x = np.maximum(hw_x, layer)
 
-        layer = np.zeros(size, dtype=np.float32)
         chunk = np.full(shape, shape[1], dtype=np.float32)
-        layer = _embed_matrix(layer, chunk, start_point)
+        layer = _embed_matrix(size, chunk, start_point)
         hw_y = np.maximum(hw_y, layer)
 
-        layer = np.zeros(size, dtype=np.float32)
         chunk = np.full(shape, shape[0], dtype=np.float32)
-        layer = _embed_matrix(layer, chunk, start_point)
+        layer = _embed_matrix(size, chunk, start_point)
         hw_z = np.maximum(hw_z, layer)
 
     return hw_x, hw_y, hw_z

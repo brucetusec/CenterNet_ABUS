@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import torch
+from .heatmap import gen_3d_heatmap, gen_3d_hw
 from torch.utils import data
 from torchvision import transforms as trnsfm
 
@@ -26,7 +27,7 @@ class AbusNpyFormat(data.Dataset):
         line = line.split(',', 4)
 
         data = np.load(self.root + 'converted_640_160_640/' + line[0].replace('/', '_'))
-        data = torch.from_numpy(data).to(torch.uint8)
+        data = torch.from_numpy(data).view(1,640,160,640).to(torch.float32)
         true_boxes = line[-1].split(' ')
         true_boxes = list(map(lambda box: box.split(','), true_boxes))
         true_boxes = [list(map(int, box)) for box in true_boxes]
@@ -45,7 +46,17 @@ class AbusNpyFormat(data.Dataset):
             'x_center': (box[2] + box[5]) / 2,
         } for box in true_boxes]
 
-        return data, true_boxes
+        scale = 4
+
+        hm = gen_3d_heatmap((640,160,640), true_boxes, scale)
+        hm = torch.from_numpy(hm).view(1, 640//scale, 160//scale, 640//scale).to(torch.float32)
+
+        wh_x, wh_y, wh_z = gen_3d_hw((640,160,640), true_boxes, scale)
+        wh_x = torch.from_numpy(wh_x).view(1, 640//scale, 160//scale, 640//scale).to(torch.float32)
+        wh_y = torch.from_numpy(wh_y).view(1, 640//scale, 160//scale, 640//scale).to(torch.float32)
+        wh_z = torch.from_numpy(wh_z).view(1, 640//scale, 160//scale, 640//scale).to(torch.float32)
+
+        return data, hm, wh_x, wh_y, wh_z
 
     def __len__(self):
         return len(self.gt)

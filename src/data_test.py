@@ -11,7 +11,7 @@ def draw_slice(volume, dir, label=None):
         os.makedirs(dir)
     min, max = torch.min(volume), torch.max(volume)
     volume = ((volume-min)/max)*255
-    volume = volume.cpu().detach().numpy()
+    volume = volume.to(torch.uint8).detach().numpy()
     for i in range(np.shape(volume)[1]):
         img = Image.fromarray(volume[:,i,:].astype(np.uint8), 'L')
         img = img.convert(mode='RGB')
