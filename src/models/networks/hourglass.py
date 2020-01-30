@@ -105,6 +105,13 @@ def make_kp_layer(cnv_dim, curr_dim, out_dim):
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1))
     )
 
+def make_hm_layer(cnv_dim, curr_dim, out_dim):
+    return nn.Sequential(
+        convolution(3, cnv_dim, curr_dim, with_bn=False),
+        nn.Conv3d(curr_dim, out_dim, (1, 1, 1)),
+        nn.Sigmoid()
+    )
+
 def make_inter_layer(dim):
     return residual(3, dim, dim)
 
@@ -180,7 +187,7 @@ class exkp(BasicModule):
     def __init__(
         self, n, nstack, dims, modules, heads, pre=None, cnv_dim=256, 
         make_cnv_layer=make_cnv_layer,
-        make_heat_layer=make_kp_layer,
+        make_heat_layer=make_hm_layer,
         make_regr_layer=make_kp_layer,
         make_up_layer=make_layer, make_low_layer=make_layer, 
         make_hg_layer=make_layer, make_hg_layer_revr=make_layer_revr,
@@ -197,8 +204,8 @@ class exkp(BasicModule):
         curr_dim = dims[0]
 
         self.pre = nn.Sequential(
-            convolution(7, 1, 32, stride=2),
-            residual(3, 32, 64, stride=2)
+            convolution(7, 1, 16, stride=2),
+            residual(3, 16, 16, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
@@ -244,7 +251,7 @@ class exkp(BasicModule):
                 ])
                 self.__setattr__(head, module)
                 for heat in self.__getattr__(head):
-                    heat[-1].bias.data.fill_(-2.19)
+                    heat[-2].bias.data.fill_(-2.19)
             else:
                 module = nn.ModuleList([
                     make_regr_layer(
@@ -295,15 +302,15 @@ class HourglassNet(exkp):
     def __init__(self, heads, num_stacks=1, debug=False):
         n       = 2
         # Number of channel
-        dims    = [64, 128, 256]
+        dims    = [16, 32, 64]
         # Number of layers of convolution
-        modules = [2, 2, 4]
+        modules = [2, 2, 2]
 
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
             make_pool_layer=make_pool_layer,
             make_hg_layer=make_hg_layer,
-            kp_layer=residual, cnv_dim=64, debug=debug
+            kp_layer=residual, cnv_dim=16, debug=debug
         )
 
 def get_large_hourglass_net(heads, n_stacks=1, debug=False):
