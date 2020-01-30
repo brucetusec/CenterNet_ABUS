@@ -1,10 +1,18 @@
-import os, sys
+import os, sys, argparse
 import numpy as np
 import torch
 from PIL import Image, ImageFont, ImageDraw
 from data.heatmap import gen_3d_heatmap, gen_3d_hw
 from data.abus_data import AbusNpyFormat
 np.set_printoptions(threshold=sys.maxsize)
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    '--index', '-i', type=int, required=True,
+    help='Index of the requested data.'
+)
+params = parser.parse_args()
 
 def draw_slice(volume, dir, label=None):
     if not os.path.exists(dir):
@@ -24,7 +32,7 @@ def draw_slice(volume, dir, label=None):
 
 def main():
     all_data = AbusNpyFormat(root, train=False, validation=False)
-    data, hm, wh_x, wh_y, wh_z = all_data.__getitem__(6)
+    data, hm, wh_x, wh_y, wh_z = all_data.__getitem__(params.index)
     print('Dataset size:', all_data.__len__())
     print('Shape of data:', data.size())
 
