@@ -5,15 +5,7 @@ import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 from data.abus_data import AbusNpyFormat
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument(
-    '--save_dir', '-s', type=str, required=True,
-    help='Specify where to save visualized volume as series of images.'
-)
-params = parser.parse_args()
-
-def main(root, id):
+def main(args, root, id):
     with open(root + 'annotations/old_all.txt', 'r') as f:
         lines = f.read().splitlines()
 
@@ -42,7 +34,7 @@ def main(root, id):
     size = (640,160,640)
     scale = (size[0]/int(line[1]),size[1]/int(line[2]),size[2]/int(line[3]))
 
-    img_dir = os.path.join(params.save_dir, str(id))
+    img_dir = os.path.join(args.save_dir, str(id))
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
@@ -61,6 +53,15 @@ def main(root, id):
     
     return
 
+def _parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--save_dir', '-s', type=str, required=True,
+        help='Specify where to save visualized volume as series of images.'
+    )
+    return parser.parse_args()
+
 if __name__ == '__main__':
     root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
-    main(root, 108)
+    args = _parse_args()
+    main(args, root, 108)

@@ -6,14 +6,6 @@ from data.heatmap import gen_3d_heatmap, gen_3d_hw
 from data.abus_data import AbusNpyFormat
 np.set_printoptions(threshold=sys.maxsize)
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument(
-    '--index', '-i', type=int, required=True,
-    help='Index of the requested data.'
-)
-params = parser.parse_args()
-
 def draw_slice(volume, dir, label=None):
     if not os.path.exists(dir):
         os.makedirs(dir)
@@ -30,9 +22,9 @@ def draw_slice(volume, dir, label=None):
                     draw.point([(int(bx['x_center']//4),int(bx['z_center']//4))],fill="red")
         img.save(os.path.join(dir ,(str(i)+'.png')))
 
-def main():
+def main(args):
     all_data = AbusNpyFormat(root, train=False, validation=False)
-    data, hm, wh_x, wh_y, wh_z = all_data.__getitem__(params.index)
+    data, hm, wh_x, wh_y, wh_z = all_data.__getitem__(args.index)
     print('Dataset size:', all_data.__len__())
     print('Shape of data:', data.size())
 
@@ -47,7 +39,16 @@ def main():
 
     return
 
+def _parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '--index', '-i', type=int, required=True,
+        help='Index of the requested data.'
+    )
+    return parser.parse_args()
+
 if __name__ == '__main__':
     root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
-
-    main()
+    args = _parse_args()
+    main(args)

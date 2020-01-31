@@ -7,21 +7,7 @@ from torch.utils.data import DataLoader
 from data.abus_data import AbusNpyFormat
 from models.networks.hourglass import get_large_hourglass_net
 
-if not torch.cuda.is_available():
-    print('CUDA is unavailable, abort mission!')
-    quit()
-else:
-    device = torch.device('cuda:0')
-
-parser = argparse.ArgumentParser()
-
-# parser.add_argument(
-#     '--save_dir', '-s', type=str, required=True,
-#     help='Specify where to save visualized volume as series of images.'
-# )
-params = parser.parse_args()
-
-def main():
+def main(args):
     heads = {
         'hm': 1, # 1 channel Probability heat map.
         'wh': 3  # 3 channel x,y,z size regression.
@@ -30,7 +16,7 @@ def main():
     model = model.to(device)
 
     trainset = AbusNpyFormat(root=root)
-    trainset_loader = DataLoader(trainset, batch_size=1, shuffle=True, num_workers=0)
+    trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     for batch_idx, (data_img, data_gt, _, _, _) in enumerate(trainset_loader):
         data_img = data_img.to(device)
         print('Batch:', data_img.shape)
@@ -40,6 +26,21 @@ def main():
         print('Height-Width tensor:', output[0]['wh'].shape)
         return
 
+def _parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '--batch_size', '-s', type=int, required=True,
+        help='Specify batch size.'
+    )
+    return parser.parse_args()
+
 if __name__=='__main__':
+    if not torch.cuda.is_available():
+        print('CUDA is unavailable, abort mission!')
+        quit()
+    else:
+        device = torch.device('cuda:0')
     root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
-    main()
+    args = _parse_args()
+    main(args)
