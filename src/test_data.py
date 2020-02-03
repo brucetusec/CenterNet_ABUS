@@ -24,18 +24,18 @@ def draw_slice(volume, dir, label=None):
 
 def main(args):
     all_data = AbusNpyFormat(root, train=False, validation=False)
-    data, hm, wh_x, wh_y, wh_z = all_data.__getitem__(args.index)
+    data, hm, box = all_data.__getitem__(args.index)
     print('Dataset size:', all_data.__len__())
     print('Shape of data:', data.size())
 
     tmp_dir = os.path.join(os.path.dirname(__file__),'test','hm')
     draw_slice(hm[0], tmp_dir)
     tmp_dir = os.path.join(os.path.dirname(__file__),'test','wh_x')
-    draw_slice(wh_x[0], tmp_dir)
+    draw_slice(box[2], tmp_dir)
     tmp_dir = os.path.join(os.path.dirname(__file__),'test','wh_y')
-    draw_slice(wh_y[0], tmp_dir)
+    draw_slice(box[1], tmp_dir)
     tmp_dir = os.path.join(os.path.dirname(__file__),'test','wh_z')
-    draw_slice(wh_z[0], tmp_dir)
+    draw_slice(box[0], tmp_dir)
 
     return
 

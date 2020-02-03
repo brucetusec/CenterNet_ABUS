@@ -17,13 +17,15 @@ def main(args):
 
     trainset = AbusNpyFormat(root=root)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
-    for batch_idx, (data_img, data_gt, _, _, _) in enumerate(trainset_loader):
+    for batch_idx, (data_img, hm_gt, box_gt) in enumerate(trainset_loader):
         data_img = data_img.to(device)
         print('Batch:', data_img.shape)
         output = model(data_img)
         print('Output length:', len(output))
-        print('Heat map tensor:', output[0]['hm'].shape)
-        print('Height-Width tensor:', output[0]['wh'].shape)
+        print('HM tensor:', output[0]['hm'].shape)
+        print('Box tensor:', output[0]['wh'].shape)
+        print('GT HM tensor:', hm_gt.shape)
+        print('GT Box tensor:', box_gt.shape)
         return
 
 def _parse_args():

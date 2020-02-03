@@ -3,7 +3,7 @@ import numpy as np
 def _embed_matrix(size, B, start_point):
     A = np.zeros(size, dtype=np.float32)
     C = A[start_point[0]:start_point[0]+B.shape[0], start_point[1]:start_point[1]+B.shape[1], start_point[2]:start_point[2]+B.shape[2]]
-    print('C:', C.shape, 'B:', B.shape, 'start:', start_point)
+    # print('C:', C.shape, 'B:', B.shape, 'start:', start_point)
     np.add(C, B, C)
     return A
 
@@ -33,7 +33,6 @@ def gen_3d_heatmap(size, gt_boxes, scale=1):
 
     return hm
 
-# 
 def gen_3d_hw(size, gt_boxes, scale=1):
     size = [w//scale for w in size]
     hw_x = np.zeros(size, dtype=np.float32)
