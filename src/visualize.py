@@ -5,11 +5,12 @@ import numpy as np
 from PIL import Image, ImageFont, ImageDraw
 from data.abus_data import AbusNpyFormat
 
-def main(args, root, id):
-    with open(root + 'annotations/old_all.txt', 'r') as f:
+def main(args, root):
+    # with open(root + 'annotations/old_all.txt', 'r') as f:
+    with open('pred.txt', 'r') as f:
         lines = f.read().splitlines()
 
-    line = lines[id]
+    line = lines[args.index]
     line = line.split(',', 4)
 
     data = np.load(root + 'converted_640_160_640/' + line[0].replace('/', '_'))
@@ -34,7 +35,7 @@ def main(args, root, id):
     size = (640,160,640)
     scale = (size[0]/int(line[1]),size[1]/int(line[2]),size[2]/int(line[3]))
 
-    img_dir = os.path.join(args.save_dir, str(id))
+    img_dir = os.path.join(args.save_dir, str(args.index))
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
@@ -59,9 +60,13 @@ def _parse_args():
         '--save_dir', '-s', type=str, required=True,
         help='Specify where to save visualized volume as series of images.'
     )
+    parser.add_argument(
+        '--index', '-i', type=int, required=True,
+        help='Which image to draw.'
+    )
     return parser.parse_args()
 
 if __name__ == '__main__':
     root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
     args = _parse_args()
-    main(args, root, 108)
+    main(args, root)

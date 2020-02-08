@@ -1,7 +1,54 @@
 import numpy as np
+import torch.nn as nn
 
-def Eason_eval_precision_recall(pred_BB, pred_score, true_BB, det_thresh):
-    
+def nms(heat, kernel=3):
+    pad = (kernel - 1) // 2
+
+    m = nn.MaxPool3d(kernel, stride=1, padding=pad)
+    hmax = m(heat)
+    keep = (hmax == heat).float()
+    return heat * keep
+
+
+def compute_iou(box1, box2):
+    '''
+        by Eason Ho
+    '''
+    b1_z0, b1_y0, b1_x0, b1_z1, b1_y1, b1_x1 = box1
+    b2_z0, b2_y0, b2_x0, b2_z1, b2_y1, b2_x1 = box2
+
+    b1_z0, b1_y0, b1_x0, b1_z1, b1_y1, b1_x1 = int(b1_z0), int(
+        b1_y0), int(b1_x0), int(b1_z1), int(b1_y1), int(b1_x1)
+    b2_z0, b2_y0, b2_x0, b2_z1, b2_y1, b2_x1 = int(b2_z0), int(
+        b2_y0), int(b2_x0), int(b2_z1), int(b2_y1), int(b2_x1)
+
+    int_x0 = max(b1_x0, b2_x0)
+    int_y0 = max(b1_y0, b2_y0)
+    int_z0 = max(b1_z0, b2_z0)
+
+    int_x1 = min(b1_x1, b2_x1)
+    int_y1 = min(b1_y1, b2_y1)
+    int_z1 = min(b1_z1, b2_z1)
+
+    int_x = int_x1 - int_x0
+    int_y = int_y1 - int_y0
+    int_z = int_z1 - int_z0
+
+    if int_x <= 0 or int_y <= 0 or int_z <= 0:
+        return 0.
+
+    int_area = ((int_x) * (int_y) * (int_z))
+
+    b1_area = ((b1_x1 - b1_x0) * (b1_y1 - b1_y0) * (b1_z1 - b1_z0))
+    b2_area = ((b2_x1 - b2_x0) * (b2_y1 - b2_y0) * (b2_z1 - b2_z0))
+    iou = int_area / (b1_area + b2_area - int_area + 1e-9)
+    return iou
+
+
+def eval_precision_recall(pred_BB, pred_score, true_BB, det_thresh):
+    '''
+        by Eason Ho
+    '''
     pred_hits = np.zeros(len(pred_BB))
     gt_hits = np.zeros(len(true_BB))
     hits_index = -np.ones(len(true_BB))
@@ -11,7 +58,7 @@ def Eason_eval_precision_recall(pred_BB, pred_score, true_BB, det_thresh):
     for pred_idx, pred_bb in enumerate(pred_BB):
 
         for gt_idx, gt_roi in enumerate(true_BB):
-            pred_iou = Eason_iou(pred_bb[:6], gt_roi[:6])
+            pred_iou = compute_iou(pred_bb[:6], gt_roi[:6])
             if pred_iou > det_thresh:
                 gt_hits[gt_idx] = 1
                 hits_index[gt_idx] = pred_idx

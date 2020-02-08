@@ -7,7 +7,8 @@ class BasicModule(nn.Module):
         super(BasicModule,self).__init__()
         self.model_name = str(type(self)) # 模型的默认名字
 
-    def load(self, path):
+    def load(self, path, ep):
+        path = path + self.model_name + '_' + str(ep)
         self.load_state_dict(torch.load(path))
 
     def save(self, name=None):

@@ -17,7 +17,7 @@ def main(args):
 
     trainset = AbusNpyFormat(root=root)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
-    for batch_idx, (data_img, hm_gt, box_gt) in enumerate(trainset_loader):
+    for batch_idx, (data_img, hm_gt, box_gt, _) in enumerate(trainset_loader):
         data_img = data_img.to(device)
         print('Batch:', data_img.shape)
         output = model(data_img)

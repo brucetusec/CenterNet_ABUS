@@ -300,11 +300,12 @@ def make_hg_layer(kernel, dim0, dim1, mod, layer=convolution, **kwargs):
 
 class HourglassNet(exkp):
     def __init__(self, heads, num_stacks=1, debug=False):
+        # How deep do you wanna go? (# of Connections between layers)
         n       = 2
         # Number of channel
-        dims    = [16, 32, 64]
+        dims    = [16, 32, 64, 128]
         # Number of layers of convolution
-        modules = [2, 2, 2]
+        modules = [2, 2, 2, 3]
 
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
