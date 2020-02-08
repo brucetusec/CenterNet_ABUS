@@ -45,8 +45,8 @@ def _neg_loss(pred, gt):
     ''' Modified focal loss. Exactly the same as CornerNet.
         Runs faster and costs a little bit more memory
     Arguments:
-        pred (batch x c x h x w)
-        gt_regr (batch x c x h x w)
+        pred (batch x c x z x y x x)
+        gt_regr (batch x c x z x y x x)
     '''
     pos_inds = gt.eq(1).float()
     neg_inds = gt.lt(1).float()
@@ -121,7 +121,7 @@ class RegLoss(nn.Module):
         loss = _reg_loss(pred, target, mask)
         return loss
 
-class RegL1Loss(nn.Module):
+class RegL1Loss_old(nn.Module):
     def __init__(self):
         super(RegL1Loss, self).__init__()
 
@@ -132,6 +132,27 @@ class RegL1Loss(nn.Module):
         loss = nn.L1Loss()
         out = loss(pred * mask, target * mask)
         out = out / (mask.sum() + 1e-4)
+        return out
+
+class RegL1Loss(nn.Module):
+    '''
+    Arguments:
+        output (batch x c x z x y x x)
+        target (batch x c x z x y x x)
+    '''
+    def __init__(self):
+        super(RegL1Loss, self).__init__()
+
+    def forward(self, pred, target):
+        ones = torch.ones(pred.shape)
+        zeros = torch.zeros(pred.shape)
+        tmp = target.cpu()
+        mask = torch.where(tmp > 0, ones, zeros).to(torch.bool).cuda()
+        
+        loss = nn.L1Loss(reduction='sum')
+        out = loss(pred * mask, target)
+        out = out / (mask.sum() + 1e-4)
+        del ones, zeros, tmp
         return out
 
 class NormRegL1Loss(nn.Module):
@@ -228,65 +249,3 @@ def compute_rot_loss(output, target_bin, target_res, mask):
           valid_output2[:, 7], torch.cos(valid_target_res2[:, 1]))
         loss_res += loss_sin2 + loss_cos2
     return loss_bin1 + loss_bin2 + loss_res
-
-class BoxDetectionLoss(torch.nn.Module):
-    def __init__(self, opt):
-        super(BoxDetectionLoss, self).__init__()
-        self.crit = FocalLoss()
-        self.crit_reg = RegL1Loss() if opt.reg_loss == 'l1' else \
-            RegLoss() if opt.reg_loss == 'sl1' else None
-        self.crit_wh = torch.nn.L1Loss(reduction='sum') if opt.dense_wh else \
-            NormRegL1Loss() if opt.norm_wh else \
-            RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg
-        self.opt = opt
-
-    def forward(self, outputs, batch):
-        opt = self.opt
-        hm_loss, wh_loss, off_loss = 0, 0, 0
-        for s in range(opt.num_stacks):
-            output = outputs[s]
-            if not opt.mse_loss:
-                output['hm'] = _sigmoid(output['hm'])
-
-            if opt.eval_oracle_hm:
-                output['hm'] = batch['hm']
-
-            if opt.eval_oracle_wh:
-                output['wh'] = torch.from_numpy(gen_oracle_map(
-                    batch['wh'].detach().cpu().numpy(), 
-                    batch['ind'].detach().cpu().numpy(), 
-                    output['wh'].shape[3], output['wh'].shape[2])).to(opt.device)
-
-            if opt.eval_oracle_offset:
-                output['reg'] = torch.from_numpy(gen_oracle_map(
-                    batch['reg'].detach().cpu().numpy(), 
-                    batch['ind'].detach().cpu().numpy(), 
-                    output['reg'].shape[3], output['reg'].shape[2])).to(opt.device)
-
-            hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
-            if opt.wh_weight > 0:
-                if opt.dense_wh:
-                    mask_weight = batch['dense_wh_mask'].sum() + 1e-4
-                    wh_loss += (
-                        self.crit_wh(output['wh'] * batch['dense_wh_mask'],
-                        batch['dense_wh'] * batch['dense_wh_mask']) / 
-                        mask_weight) / opt.num_stacks
-                elif opt.cat_spec_wh:
-                    wh_loss += self.crit_wh(
-                        output['wh'], batch['cat_spec_mask'],
-                        batch['ind'], batch['cat_spec_wh']) / opt.num_stacks
-                else:
-                    wh_loss += self.crit_reg(
-                        output['wh'], batch['reg_mask'],
-                        batch['ind'], batch['wh']) / opt.num_stacks
-
-            if opt.reg_offset and opt.off_weight > 0:
-                off_loss += self.crit_reg(output['reg'], batch['reg_mask'],
-                    batch['ind'], batch['reg']) / opt.num_stacks
-        
-        loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + \
-            opt.off_weight * off_loss
-        loss_stats = {'loss': loss, 'hm_loss': hm_loss,
-            'wh_loss': wh_loss, 'off_loss': off_loss}
-        
-        return loss, loss_stats

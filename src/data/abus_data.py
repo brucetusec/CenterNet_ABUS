@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import torch
-from .heatmap import gen_3d_heatmap, gen_3d_hw
+from utils.heatmap import gen_3d_heatmap, gen_3d_hw
 from torch.utils import data
 from torchvision import transforms as trnsfm
 
@@ -59,7 +59,7 @@ class AbusNpyFormat(data.Dataset):
         wh_y = torch.from_numpy(wh_y).view(1, 640//scale, 160//scale, 640//scale).to(torch.float32)
         wh_z = torch.from_numpy(wh_z).view(1, 640//scale, 160//scale, 640//scale).to(torch.float32)
 
-        return data, hm, torch.cat((wh_x, wh_y, wh_z), dim=0)
+        return data, hm, torch.cat((wh_z, wh_y, wh_x), dim=0), index
 
     def __len__(self):
         return len(self.gt)
@@ -74,3 +74,8 @@ class AbusNpyFormat(data.Dataset):
         line = self.gt[index]
         line = line.split(',', 4)
         return line[0].replace('/', '_')
+
+    def getFilePath(self, index):
+        line = self.gt[index]
+        line = line.split(',', 4)
+        return line[0]

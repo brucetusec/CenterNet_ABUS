@@ -2,7 +2,7 @@ import os, sys, argparse
 import numpy as np
 import torch
 from PIL import Image, ImageFont, ImageDraw
-from data.heatmap import gen_3d_heatmap, gen_3d_hw
+from utils.heatmap import gen_3d_heatmap, gen_3d_hw
 from data.abus_data import AbusNpyFormat
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -24,7 +24,7 @@ def draw_slice(volume, dir, label=None):
 
 def main(args):
     all_data = AbusNpyFormat(root, train=False, validation=False)
-    data, hm, box = all_data.__getitem__(args.index)
+    data, hm, box, _ = all_data.__getitem__(args.index)
     print('Dataset size:', all_data.__len__())
     print('Shape of data:', data.size())
 
