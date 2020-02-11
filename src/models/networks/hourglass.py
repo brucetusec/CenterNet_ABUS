@@ -303,7 +303,7 @@ class HourglassNet(exkp):
         # How deep do you wanna go? (# of Connections between layers)
         n       = 2
         # Number of channel
-        dims    = [16, 32, 64, 128]
+        dims    = [16, 64, 256, 256]
         # Number of layers of convolution
         modules = [2, 2, 2, 3]
 
