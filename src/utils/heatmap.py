@@ -25,13 +25,16 @@ def gen_3d_heatmap(size, gt_boxes, scale=1):
     hm = np.zeros(size, dtype=np.float32)
 
     for bbox in gt_boxes:
-        half_width = (int((bbox['z_range']/2)//scale), int((bbox['y_range']/2)//scale), int((bbox['x_range']/2)//scale))
+        half_width = (int(bbox['z_range']//scale), int(bbox['y_range']//scale), int(bbox['x_range']//scale))
         # min width must be at least 1
         half_width = [w if w > 0 else 1 for w in half_width]
+        expand = map(lambda x: x+1 if x%2 == 0 else x, half_width)
+        half_width = tuple(expand)
         # print('center:', (bbox['z_center']//scale, bbox['y_center']//scale, bbox['x_center']//scale), 'half-w:', half_width)
-
-        gauss_3d = gaussian3D(half_width)
-        start_point = (int(bbox['z_bot']//scale + half_width[0]//2), int(bbox['y_bot']//scale + half_width[1]//2), int(bbox['x_bot']//scale + half_width[2]//2))
+        # print(half_width)
+        gauss_3d = gaussian3D(half_width, sigma=2)
+        start_point = (int(bbox['z_bot']//scale), int(bbox['y_bot']//scale), int(bbox['x_bot']//scale))
+        # print(gauss_3d)
         layer = _embed_matrix(size, gauss_3d, start_point)
         hm = np.maximum(hm, layer)
 
