@@ -149,7 +149,7 @@ class RegL1Loss(nn.Module):
         tmp = target.cpu()
         mask = torch.where(tmp > 0, ones, zeros).to(torch.bool).cuda()
         
-        loss = nn.L1Loss(reduction='sum')
+        loss = nn.SmoothL1Loss(reduction='sum')
         out = loss(pred * mask, target)
         out = out / (mask.sum() + 1e-4)
         del ones, zeros, tmp
