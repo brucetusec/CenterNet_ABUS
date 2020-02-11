@@ -4,5 +4,6 @@ results/
 !src/data/
 src/test/*
 model_weights/
+*/checkpoints/
 *pyc
 *_old.py

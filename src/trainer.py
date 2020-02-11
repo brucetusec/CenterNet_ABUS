@@ -41,7 +41,7 @@ def train(args):
     for epoch in range(args.max_epoch):
         current_loss = 0
         epoch_start_time = time.time()
-        for batch_idx, (data_img, data_hm, data_wh) in enumerate(trainset_loader):
+        for batch_idx, (data_img, data_hm, data_wh, _) in enumerate(trainset_loader):
             if use_cuda:
                 data_img = data_img.cuda()
                 data_hm = data_hm.cuda()
