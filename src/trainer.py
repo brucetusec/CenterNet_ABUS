@@ -41,9 +41,6 @@ def train(args):
     for epoch in range(args.max_epoch):
         current_loss = 0
         epoch_start_time = time.time()
-        if (epoch+1) % 20 == 0:
-            for g in optim.param_groups:
-                g['lr'] /= 10
 
         for batch_idx, (data_img, data_hm, data_wh, _) in enumerate(trainset_loader):
             if use_cuda:
@@ -79,7 +76,7 @@ def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=2)
     parser.add_argument('--max_epoch', type=int, default=60)
-    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--lambda_s', type=float, default=0.1)
     return parser.parse_args()
 
