@@ -14,7 +14,7 @@ device = torch.device("cuda" if use_cuda else "cpu")
 torch.cuda.empty_cache()
 
 def train(args):
-    trainset = AbusNpyFormat(root=root)
+    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, augmentation=True)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
     crit_hm = FocalLoss()
@@ -38,10 +38,11 @@ def train(args):
     print('Training starts.')
     start_time = time.time()
     min_loss = 0
+    
     for epoch in range(args.max_epoch):
         current_loss = 0
         epoch_start_time = time.time()
-
+        lambda_s = args.lambda_s * (epoch/10 + 1)
         for batch_idx, (data_img, data_hm, data_wh, _) in enumerate(trainset_loader):
             if use_cuda:
                 data_img = data_img.cuda()
@@ -54,7 +55,7 @@ def train(args):
             hm_loss = crit_hm(output[0]['hm'], data_hm)
             wh_loss = crit_wh(wh_pred, data_wh)
 
-            total_loss = hm_loss + args.lambda_s*wh_loss
+            total_loss = hm_loss + lambda_s*wh_loss
             current_loss += total_loss
             total_loss.backward()
 
@@ -66,6 +67,8 @@ def train(args):
         if epoch == 0 or current_loss < min_loss:
             min_loss = current_loss
             model.save(str(epoch))
+        elif (epoch % 10) == 9:
+            model.save(str(epoch))
 
         train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
         print('Epoch exec time: {}'.format(time.time() - epoch_start_time))
@@ -74,6 +77,7 @@ def train(args):
 
 def _parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--crx_valid', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=2)
     parser.add_argument('--max_epoch', type=int, default=60)
     parser.add_argument('--lr', type=float, default=1e-4)

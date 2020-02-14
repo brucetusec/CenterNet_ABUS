@@ -18,24 +18,28 @@ def draw_slice(volume, dir, label=None):
         draw = ImageDraw.Draw(img)
         if label != None:
             for bx in label:
-                if bx['y_center']//4== i:
-                    draw.point([(int(bx['x_center']//4),int(bx['z_center']//4))],fill="red")
+                if int(bx['y_bot']) <= i <= int(bx['y_top']):
+                    draw.point([(10, 10), (19, 12), (35, 14), (60, 16)])
+                    draw.rectangle([(bx['z_bot'], bx['x_bot']),(bx['z_top'], bx['x_top'])],outline ="red", width=2)
         img.save(os.path.join(dir ,(str(i)+'.png')))
 
 def main(args):
-    all_data = AbusNpyFormat(root, train=False, validation=False)
-    data, hm, box, _ = all_data.__getitem__(args.index)
+    all_data = AbusNpyFormat(root, crx_valid=False, crx_fold_num=4, augmentation=True)
+    data, hm, box, label = all_data.__getitem__(args.index)
     print('Dataset size:', all_data.__len__())
     print('Shape of data:', data.size())
 
-    tmp_dir = os.path.join(os.path.dirname(__file__),'test','hm')
+    tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'hm')
     draw_slice(hm[0], tmp_dir)
-    tmp_dir = os.path.join(os.path.dirname(__file__),'test','wh_x')
+    tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'wh_x')
     draw_slice(box[2], tmp_dir)
-    tmp_dir = os.path.join(os.path.dirname(__file__),'test','wh_y')
+    tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'wh_y')
     draw_slice(box[1], tmp_dir)
-    tmp_dir = os.path.join(os.path.dirname(__file__),'test','wh_z')
+    tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'wh_z')
     draw_slice(box[0], tmp_dir)
+
+    tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'vol')
+    draw_slice(data[0], tmp_dir, label=label)
 
     return
 
