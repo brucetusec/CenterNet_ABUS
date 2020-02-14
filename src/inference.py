@@ -30,9 +30,8 @@ def main(args):
             data_img = data_img.to(device)
             output = model(data_img)
             print('Output length:', len(output))
-            print('HM tensor:', output[0]['hm'].shape)
-            print('Box tensor:', output[0]['wh'].shape)
             print(torch.max(output[0]['hm']))
+            wh_pred = torch.abs(output[0]['wh'])
             hmax = nms(output[0]['hm'])
             topk_scores, topk_inds = torch.topk(hmax.view(-1), 10)
             print(topk_scores)
@@ -42,12 +41,15 @@ def main(args):
 
             box = trainset.getFilePath(idx)+',640,160,640,'
             for i in range(topk_scores.shape[0]):
+                if topk_scores[i] < 0.25:
+                    continue
+
                 if i > 0:
                     box += ' '
 
-                w0 = output[0]['wh'][0,0,z[i],y[i],x[i]].to(torch.uint8).item()
-                w1 = output[0]['wh'][0,1,z[i],y[i],x[i]].to(torch.uint8).item()
-                w2 = output[0]['wh'][0,2,z[i],y[i],x[i]].to(torch.uint8).item()
+                w0 = wh_pred[0,0,z[i],y[i],x[i]].to(torch.uint8).item()
+                w1 = wh_pred[0,1,z[i],y[i],x[i]].to(torch.uint8).item()
+                w2 = wh_pred[0,2,z[i],y[i],x[i]].to(torch.uint8).item()
 
                 z_bot, z_top = _get_dilated_range(z[i], w0, scale=scale)
                 y_bot, y_top = _get_dilated_range(y[i], w1, scale=scale)

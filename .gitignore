@@ -1,6 +1,7 @@
 data/
 result/
 results/
+gt/
 !src/data/
 src/test/*
 model_weights/
