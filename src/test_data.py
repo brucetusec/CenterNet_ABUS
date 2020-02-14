@@ -20,7 +20,7 @@ def draw_slice(volume, dir, label=None):
             for bx in label:
                 if int(bx['y_bot']) <= i <= int(bx['y_top']):
                     draw.point([(10, 10), (19, 12), (35, 14), (60, 16)])
-                    draw.rectangle([(bx['z_bot'], bx['x_bot']),(bx['z_top'], bx['x_top'])],outline ="red", width=2)
+                    draw.rectangle([(bx['x_bot'], bx['z_bot']),(bx['x_top'], bx['z_top'])],outline ="red", width=2)
         img.save(os.path.join(dir ,(str(i)+'.png')))
 
 def main(args):
