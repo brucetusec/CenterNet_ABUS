@@ -71,9 +71,10 @@ def train(args):
             model.save(str(epoch))
 
         train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
-        print('Epoch exec time: {}'.format(time.time() - epoch_start_time))
+        print('Epoch exec time: {} min'.format((time.time() - epoch_start_time)/60))
 
     print("Training finished.")
+    print("Total time cost: {} min.".format((time.time() - start_time)/60))
 
 def _parse_args():
     parser = argparse.ArgumentParser()

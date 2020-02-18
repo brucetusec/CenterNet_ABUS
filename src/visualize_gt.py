@@ -6,7 +6,7 @@ from PIL import Image, ImageFont, ImageDraw
 from data.abus_data import AbusNpyFormat
 
 def main(args, root):
-    with open('pred.txt', 'r') as f:
+    with open(root + 'annotations/old_all.txt', 'r') as f:
         lines = f.read().splitlines()
 
     line = lines[args.index]
@@ -29,11 +29,10 @@ def main(args, root):
         'x_top': box[5],
         'x_range': box[5] - box[2] + 1,
         'x_center': (box[2] + box[5]) / 2,
-        'score': box[6]
     } for box in boxes]
 
-    #size = (640,160,640)
-    #scale = (size[0]/int(line[1]),size[1]/int(line[2]),size[2]/int(line[3]))
+    size = (640,160,640)
+    scale = (size[0]/int(line[1]),size[1]/int(line[2]),size[2]/int(line[3]))
 
     img_dir = os.path.join(args.save_dir, str(args.index))
     if not os.path.exists(img_dir):
@@ -44,15 +43,12 @@ def main(args, root):
         img = img.convert(mode='RGB')
         draw = ImageDraw.Draw(img)
         for bx in boxes:
-            #z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot']*scale[0], bx['z_top']*scale[0], bx['y_bot']*scale[1], bx['y_top']*scale[1], bx['x_bot']*scale[2], bx['x_top']*scale[2]
-            z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], bx['x_bot'], bx['x_top']
+            z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot']*scale[0], bx['z_top']*scale[0], bx['y_bot']*scale[1], bx['y_top']*scale[1], bx['x_bot']*scale[2], bx['x_top']*scale[2]
 
             if int(y_bot) <= i <= int(y_top):
                 draw.rectangle(
                     [(z_bot,x_bot),(z_top,x_top)],
-                    outline ="red", width=2)
-                draw.rectangle((z_bot,x_bot-10,z_bot+32,x_bot), fill='red')
-                draw.text((z_bot+1,x_bot-10), str(bx['score']), fill="white")
+                    outline ="blue", width=2)
         img.save(os.path.join(img_dir,(str(i)+'.png')))
     
     return

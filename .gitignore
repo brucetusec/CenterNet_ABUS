@@ -2,6 +2,7 @@ data/
 result/
 results/
 gt/
+history/
 !src/data/
 src/test/*
 model_weights/

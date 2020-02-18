@@ -5,7 +5,7 @@ from utils.heatmap import gen_3d_heatmap, gen_3d_hw
 from torch.utils import data
 
 class AbusNpyFormat(data.Dataset):
-    def __init__(self, root, crx_valid=False, crx_fold_num=0, augmentation=False):
+    def __init__(self, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False):
         print('Data set info: Cross-validation {}, fold number {}, data augmentation {}'.format(crx_valid, crx_fold_num, augmentation))
         self.root = root
         with open(self.root + 'annotations/old_all.txt', 'r') as f:
@@ -17,9 +17,16 @@ class AbusNpyFormat(data.Dataset):
             for fi in range(5):
                 folds.append(lines[int(fi*0.2*len(lines)):int((fi+1)*0.2*len(lines))])
 
-            folds.pop(crx_fold_num)
-            for li in folds:
-                self.gt += li
+            cut_set = folds.pop(crx_fold_num)
+            if crx_partition == 'train':
+                for li in folds:
+                    self.gt += li
+            elif crx_partition == 'valid':
+                self.gt = cut_set
+            else:
+                print('Use train set as default.')
+                for li in folds:
+                    self.gt += li
         else:
             self.gt = lines
 
@@ -62,7 +69,7 @@ class AbusNpyFormat(data.Dataset):
         wh_y = torch.from_numpy(wh_y).view(1, 640//scale, 160//scale, 640//scale).to(torch.float32)
         wh_z = torch.from_numpy(wh_z).view(1, 640//scale, 160//scale, 640//scale).to(torch.float32)
 
-        return data, hm, torch.cat((wh_z, wh_y, wh_x), dim=0), boxes
+        return data, hm, torch.cat((wh_z, wh_y, wh_x), dim=0), [boxes,index]
 
 
     def __len__(self):
