@@ -4,9 +4,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from models.networks.hourglass import get_large_hourglass_net
-from models.loss import FocalLoss, RegL1Loss, RegLoss
+from models.loss import FocalLoss, RegL1Loss
 from data.abus_data import AbusNpyFormat
 
 use_cuda = torch.cuda.is_available()
@@ -14,6 +15,7 @@ device = torch.device("cuda" if use_cuda else "cpu")
 torch.cuda.empty_cache()
 
 def train(args):
+    print('Preparing...')
     trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, augmentation=True)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
@@ -22,7 +24,7 @@ def train(args):
     crit_wh = crit_reg
 
     train_hist = {
-        'hm_loss':[],
+        'loss':[],
         'per_epoch_time':[]
     }
 
@@ -31,15 +33,24 @@ def train(args):
         'wh': 3
     }
     model = get_large_hourglass_net(heads, n_stacks=1)
-    # model.train()
+    if args.resume:
+        init_ep = max(0, args.resume_ep)
+        print('Resume training from the latest checkpoint.')
+        model.load(chkpts_dir, 'latest')
+    else:
+        init_ep = 0
+    end_ep = args.max_epoch
+    model.train()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-    # TODO: trim codes
-    print('Training starts.')
+    print('Preparation done.')
+    print('******************')
+    print('Training starts...')
+    
     start_time = time.time()
     min_loss = 0
-    
-    for epoch in range(args.max_epoch):
+
+    for epoch in range(init_ep, end_ep):
         current_loss = 0
         epoch_start_time = time.time()
         lambda_s = args.lambda_s * (epoch/10 + 1)
@@ -56,7 +67,7 @@ def train(args):
             wh_loss = crit_wh(wh_pred, data_wh)
 
             total_loss = hm_loss + lambda_s*wh_loss
-            current_loss += total_loss
+            current_loss += total_loss.item()
             total_loss.backward()
 
             optimizer.step()
@@ -69,12 +80,20 @@ def train(args):
             model.save(str(epoch))
         elif (epoch % 10) == 9:
             model.save(str(epoch))
+        model.save('lastest')
 
         train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
+        train_hist['loss'].append(current_loss)
         print('Epoch exec time: {} min'.format((time.time() - epoch_start_time)/60))
 
     print("Training finished.")
     print("Total time cost: {} min.".format((time.time() - start_time)/60))
+    plt.plot(train_hist['loss'])
+    plt.ylabel('Training set loss')
+    plt.xlabel('Epoch')
+    plt.show()
+    plt.savefig('fold{}.png'.format(args.crx_valid))
+
 
 def _parse_args():
     parser = argparse.ArgumentParser()
@@ -83,14 +102,17 @@ def _parse_args():
     parser.add_argument('--max_epoch', type=int, default=60)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--lambda_s', type=float, default=0.1)
+    parser.add_argument('--resume', type=bool, default=False)
+    parser.add_argument('--resume_ep', type=int, default=0)
     return parser.parse_args()
 
 if __name__ == '__main__':
     if use_cuda:
         print('GPU is available.')
+
     args = _parse_args()
     root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
-    chkpts_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'checkpoints')
+    chkpts_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'checkpoints/')
     if not os.path.exists(chkpts_dir):
         os.makedirs(chkpts_dir)
 
