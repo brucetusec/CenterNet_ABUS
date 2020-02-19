@@ -45,39 +45,6 @@ def compute_iou(box1, box2, scale):
     return iou
 
 
-def Eason_iou_new(box1, box2):
-    b1_z0, b1_y0, b1_x0, b1_z1, b1_y1, b1_x1 = box1
-    b2_z0, b2_y0, b2_x0, b2_z1, b2_y1, b2_x1 = box2
-
-    b1_z0, b1_y0, b1_x0, b1_z1, b1_y1, b1_x1 = int(b1_z0), int(
-        b1_y0), int(b1_x0), int(b1_z1), int(b1_y1), int(b1_x1)
-    b2_z0, b2_y0, b2_x0, b2_z1, b2_y1, b2_x1 = int(b2_z0), int(
-        b2_y0), int(b2_x0), int(b2_z1), int(b2_y1), int(b2_x1)
-
-    int_x0 = max(b1_x0, b2_x0)
-    int_y0 = max(b1_y0, b2_y0)
-    int_z0 = max(b1_z0, b2_z0)
-
-    int_x1 = min(b1_x1, b2_x1)
-    int_y1 = min(b1_y1, b2_y1)
-    int_z1 = min(b1_z1, b2_z1)
-
-    int_x = int_x1 - int_x0
-    int_y = int_y1 - int_y0
-    int_z = int_z1 - int_z0
-
-    if int_x <= 0 or int_y <= 0 or int_z <= 0:
-        return 0., 0
-
-    int_area = ((int_x) * (int_y) * (int_z))
-
-    b1_area = ((b1_x1 - b1_x0) * (b1_y1 - b1_y0) * (b1_z1 - b1_z0))
-    b2_area = ((b2_x1 - b2_x0) * (b2_y1 - b2_y0) * (b2_z1 - b2_z0))
-
-    iou = int_area / (b1_area + b2_area - int_area + 1e-9)
-    return iou, int_area
-
-
 def eval_precision_recall(pred_BB, true_BB, det_thresh, scale):
     '''
         by Eason Ho
