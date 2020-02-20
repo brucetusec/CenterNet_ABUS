@@ -15,7 +15,10 @@ class AbusNpyFormat(data.Dataset):
         self.gt = []      
         if crx_valid:
             for fi in range(5):
-                folds.append(lines[int(fi*0.2*len(lines)):int((fi+1)*0.2*len(lines))])
+                if fi == 4:
+                    folds.append(lines[int(fi*0.2*len(lines)):])
+                else:
+                    folds.append(lines[int(fi*0.2*len(lines)):int((fi+1)*0.2*len(lines))])
 
             cut_set = folds.pop(crx_fold_num)
             if crx_partition == 'train':
