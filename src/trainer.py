@@ -80,8 +80,8 @@ def train(args):
 
             optimizer.step()
             
-            print("Epoch: [%2d] [%4d], hm_loss: %.3f, wh_loss: %.3f, total_loss: %3f" \
-                % ((epoch + 1), (batch_idx + 1), hm_loss.item(), wh_loss.item(), total_loss.item()))
+            print("Epoch: [{:2d}] [{:3d}], hm_loss: {:.3f}, wh_loss: {:.3f}, total_loss: {:.3f}"\
+                .format((epoch + 1), (batch_idx + 1), hm_loss.item(), wh_loss.item(), total_loss.item()))
         
         # Validation
         model.eval()
