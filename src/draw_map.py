@@ -205,6 +205,7 @@ def main():
     plt.legend(loc='lower right')
     plt.ylabel('Precision')
     plt.xlabel('Sensitivity')
+    plt.savefig('map_test.png')
     plt.show()
 
 

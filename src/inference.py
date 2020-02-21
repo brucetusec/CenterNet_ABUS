@@ -23,7 +23,7 @@ def main(args):
     model.eval()
     model = model.to(device)
 
-    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=4, crx_partition='valid')
+    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=args.fold_num, crx_partition='valid')
     trainset_loader = DataLoader(trainset, batch_size=1, shuffle=False, num_workers=0)
 
     start_time = time.time()
@@ -65,8 +65,12 @@ def _parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '--epoch', '-e', type=int, required=True,
-        help='Which epoch of the model to be loaded.'
+        '--epoch', '-e', type=str, required=True,
+        help='Which epoch of the model to be loaded?'
+    )
+    parser.add_argument(
+        '--fold_num', '-f', type=int, default=4,
+        help='Which fold serves as valid set?'
     )
     return parser.parse_args()
 
