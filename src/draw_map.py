@@ -29,7 +29,7 @@ def build_threshold():
         thresholds.append(tmp)
         tmp += 0.002
 
-    for i in range(0, 82):
+    for i in range(0, 85):
         thresholds.append(tmp)
         tmp += 0.01
      
@@ -194,14 +194,13 @@ def main():
     draw_full(data[..., 5], data[..., 6], '#FF0000', 'IOU > 0.10 ', '-', 1)
 
     axes = plt.gca()
-    axes.set_xlim([0, 1.01])
-    x_tick = np.arange(0, 1, 0.125)
+    axes.set_aspect('auto')
+    axes.set_xlim(0.125, 1.0)
+    x_tick = np.arange(0.125, 1, 0.125)
     plt.xticks(x_tick)
-    axes.set_ylim([0, 1.01])
-    y_tick = np.arange(0, 1, 0.125)
+    axes.set_ylim(0.125, 1.01)
+    y_tick = np.arange(0.125, 1, 0.125)
     plt.yticks(y_tick)
-
-
     plt.legend(loc='lower right')
     plt.ylabel('Precision')
     plt.xlabel('Sensitivity')

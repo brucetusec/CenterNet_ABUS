@@ -6,16 +6,15 @@ from PIL import Image, ImageFont, ImageDraw
 from data.abus_data import AbusNpyFormat
 
 def main(args, root):
-    with open('pred.txt', 'r') as f:
+    with open(root + 'annotations/old_all.txt', 'r') as f:
         lines = f.read().splitlines()
 
     line = lines[args.index]
     line = line.split(',', 4)
+    pred_npy = npy_dir + line[0].replace('/', '_')
 
-    data = np.load(root + 'converted_640_160_640/' + line[0].replace('/', '_'))
-    boxes = line[-1].split(' ')
-    boxes = list(map(lambda box: box.split(','), boxes))
-    boxes = [list(map(float, box)) for box in boxes]
+    img_data = np.load(root + 'converted_640_160_640/' + line[0].replace('/', '_'))
+    box_list = np.load(pred_npy)
     boxes = [{
         'z_bot': box[0],
         'z_top': box[3],
@@ -30,10 +29,7 @@ def main(args, root):
         'x_range': box[5] - box[2] + 1,
         'x_center': (box[2] + box[5]) / 2,
         'score': box[6]
-    } for box in boxes]
-
-    #size = (640,160,640)
-    #scale = (size[0]/int(line[1]),size[1]/int(line[2]),size[2]/int(line[3]))
+    } for box in box_list]
 
     img_dir = os.path.join(args.save_dir, str(args.index))
     if not os.path.exists(img_dir):
@@ -44,7 +40,6 @@ def main(args, root):
         img = img.convert(mode='RGB')
         draw = ImageDraw.Draw(img)
         for bx in boxes:
-            #z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot']*scale[0], bx['z_top']*scale[0], bx['y_bot']*scale[1], bx['y_top']*scale[1], bx['x_bot']*scale[2], bx['x_top']*scale[2]
             z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], bx['x_bot'], bx['x_top']
 
             if int(y_bot) <= i <= int(y_top):
@@ -71,5 +66,6 @@ def _parse_args():
 
 if __name__ == '__main__':
     root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
+    npy_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'results/prediction/')
     args = _parse_args()
     main(args, root)
