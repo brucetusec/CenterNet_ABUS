@@ -6,8 +6,6 @@ from torch.utils import data
 
 class AbusNpyFormat(data.Dataset):
     def __init__(self, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False):
-        print('Data set info: Cross-validation {}, partition: {}, fold number {}, data augmentation {}'\
-            .format(crx_valid, crx_partition, crx_fold_num, augmentation))
         self.root = root
         with open(self.root + 'annotations/old_all.txt', 'r') as f:
             lines = f.read().splitlines()
@@ -36,6 +34,8 @@ class AbusNpyFormat(data.Dataset):
 
         self.set_size = len(self.gt)
         self.aug = augmentation
+        print('Dataset info: Cross-validation {}, partition: {}, fold number {}, data augmentation {}, size {}'\
+            .format(crx_valid, crx_partition, crx_fold_num, augmentation, self.__len__()))
 
 
     def __getitem__(self, index):

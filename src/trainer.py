@@ -16,8 +16,8 @@ torch.cuda.empty_cache()
 
 def train(args):
     print('Preparing...')
-    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, augmentation=False)
-    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, augmentation=True)
+    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False)
+    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     validset_loader = DataLoader(validset, batch_size=1, shuffle=False, num_workers=0)
 
@@ -100,18 +100,22 @@ def train(args):
                 valid_hm_loss += hm_loss.item()
                 valid_wh_loss += wh_loss.item()
 
+        valid_hm_loss = valid_hm_loss/validset.__len__()
+        valid_wh_loss = valid_wh_loss/validset.__len__()
+        current_loss = current_loss/trainset.__len__()
+
         if epoch == 0 or current_loss < min_loss:
             min_loss = current_loss
             model.save(str(epoch))
         elif (epoch % 10) == 9:
             model.save(str(epoch))
-        model.save('lastest')
+        model.save('latest')
 
         train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
         train_hist['valid_hm_loss'].append(valid_hm_loss)
         train_hist['valid_wh_loss'].append(valid_wh_loss)
         train_hist['train_loss'].append(current_loss)
-        print("Epoch: [{:d}], valid_hm_loss: {:.3f}, wh_loss: {:.3f}".format((epoch + 1), valid_hm_loss, valid_wh_loss))
+        print("Epoch: [{:d}], valid_hm_loss: {:.3f}, valid_wh_loss: {:.3f}".format((epoch + 1), valid_hm_loss, valid_wh_loss))
         print('Epoch exec time: {} min'.format((time.time() - epoch_start_time)/60))
 
     print("Training finished.")
@@ -129,7 +133,7 @@ def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--crx_valid', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=2)
-    parser.add_argument('--max_epoch', type=int, default=60)
+    parser.add_argument('--max_epoch', type=int, default=80)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--lambda_s', type=float, default=0.1)
     parser.add_argument('--resume', type=bool, default=False)
