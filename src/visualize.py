@@ -31,12 +31,12 @@ def main(args, root):
         'score': box[6]
     } for box in box_list]
 
-    img_dir = os.path.join(args.save_dir, str(args.index))
+    img_dir = os.path.join(args.save_dir, 'pred', str(args.index))
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
-    for i in range(np.shape(data)[1]):
-        img = Image.fromarray(data[:,i,:], 'L')
+    for i in range(np.shape(img_data)[1]):
+        img = Image.fromarray(img_data[:,i,:], 'L')
         img = img.convert(mode='RGB')
         draw = ImageDraw.Draw(img)
         for bx in boxes:

@@ -34,7 +34,7 @@ def main(args, root):
     size = (640,160,640)
     scale = (size[0]/int(line[1]),size[1]/int(line[2]),size[2]/int(line[3]))
 
-    img_dir = os.path.join(args.save_dir, str(args.index))
+    img_dir = os.path.join(args.save_dir, 'gt', str(args.index))
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
 
