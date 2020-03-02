@@ -12,7 +12,7 @@ def main(args):
         'hm': 1, # 1 channel Probability heat map.
         'wh': 3  # 3 channel x,y,z size regression.
     }
-    model = get_large_hourglass_net(heads, n_stacks=1, debug=True)
+    model = get_large_hourglass_net(heads, n_stacks=2, debug=True)
     model = model.to(device)
 
     trainset = AbusNpyFormat(root=root)

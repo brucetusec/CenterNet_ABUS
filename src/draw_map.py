@@ -167,15 +167,16 @@ def main():
         # big_sen1=hit_large_size_cnt[1]/(hit_large_size_cnt[1]+miss_large_size_cnt[1]+1e-10)
         # big_sen2=hit_large_size_cnt[2]/(hit_large_size_cnt[2]+miss_large_size_cnt[2]+1e-10)
 
-        performnace_per_thre.append([
-            score_hit_thre,
-            total_pass,
-            sensitivity,
-            precision,
-            sum_FP/total_pass,
-            sensitivity_IOU_1,
-            precision_IOU_1,
-            sum_FP_IOU_1/total_pass])
+        if sensitivity > 0.125:
+            performnace_per_thre.append([
+                score_hit_thre,
+                total_pass,
+                sensitivity,
+                precision,
+                sum_FP/total_pass,
+                sensitivity_IOU_1,
+                precision_IOU_1,
+                sum_FP_IOU_1/total_pass])
 
             # sen0,sen1,sen2,big_sen0,big_sen1,big_sen2
 
@@ -196,10 +197,10 @@ def main():
     axes = plt.gca()
     axes.set_aspect('auto')
     axes.set_xlim(0.125, 1.0)
-    x_tick = np.arange(0.125, 1, 0.125)
+    x_tick = np.arange(0, 1, 0.125)
     plt.xticks(x_tick)
     axes.set_ylim(0.125, 1.01)
-    y_tick = np.arange(0.125, 1, 0.125)
+    y_tick = np.arange(0, 1, 0.125)
     plt.yticks(y_tick)
     plt.legend(loc='lower right')
     plt.ylabel('Precision')

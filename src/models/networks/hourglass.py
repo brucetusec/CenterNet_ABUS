@@ -131,7 +131,7 @@ class kp_module(nn.Module):
         self.n   = n
 
         if debug:
-            print('Current stack:', n, 'Modules:', modules)
+            print('Current depth:', n, 'Modules:', modules)
 
         curr_mod = modules[0]
         next_mod = modules[1]
@@ -204,8 +204,8 @@ class exkp(BasicModule):
         curr_dim = dims[0]
 
         self.pre = nn.Sequential(
-            convolution(7, 1, 16, stride=2),
-            residual(3, 16, 16, stride=2)
+            convolution(3, 1, 16, stride=2),
+            residual(3, 16, 64, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
@@ -303,15 +303,15 @@ class HourglassNet(exkp):
         # How deep do you wanna go? (# of Connections between layers)
         n       = 2
         # Number of channel
-        dims    = [16, 64, 256, 256]
+        dims    = [64, 64, 256]
         # Number of layers of convolution
-        modules = [2, 2, 2, 3]
+        modules = [2, 2, 2]
 
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
             make_pool_layer=make_pool_layer,
             make_hg_layer=make_hg_layer,
-            kp_layer=residual, cnv_dim=16, debug=debug
+            kp_layer=residual, cnv_dim=64, debug=debug
         )
 
 def get_large_hourglass_net(heads, n_stacks=1, debug=False):
