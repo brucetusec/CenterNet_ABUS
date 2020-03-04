@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 from data.abus_data import AbusNpyFormat
 from models.networks.hourglass import get_large_hourglass_net
-from models.loss import FocalLoss, RegL1Loss, RegLoss
+from models.loss import FocalLoss, RegL1Loss
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
 torch.cuda.empty_cache()
@@ -34,8 +34,8 @@ def main(args):
 
         output = model(data_img)
 
-        wh_pred = torch.abs(output[0]['wh'])
-        hm_loss = crit_hm(output[0]['hm'], data_hm)
+        wh_pred = torch.abs(output[-1]['wh'])
+        hm_loss = crit_hm(output[-1]['hm'], data_hm)
         wh_loss = 100*crit_wh(wh_pred, data_wh)
 
         print("hm_loss: %.3f, wh_loss: %.3f" \

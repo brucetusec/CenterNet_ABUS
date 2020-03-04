@@ -8,11 +8,12 @@ class BasicModule(nn.Module):
         self.model_name = str(type(self)) # 模型的默认名字
 
     def load(self, path, ep):
-        path = path + self.model_name + '_' + str(ep)
+        #path = path + self.model_name + '_' + str(ep)
+        path =  path + 'hourglass_' + str(ep)
         self.load_state_dict(torch.load(path))
 
     def save(self, name=None):
-        prefix = 'checkpoints/' + self.model_name + '_'
+        prefix = 'checkpoints/' + 'hourglass_'
         '''
         e.g. AlexNet_0710_23:57:29.pth
         '''

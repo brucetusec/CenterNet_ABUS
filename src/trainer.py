@@ -36,7 +36,7 @@ def train(args):
         'hm': 1,
         'wh': 3
     }
-    model = get_large_hourglass_net(heads, n_stacks=1)
+    model = get_large_hourglass_net(heads, n_stacks=2)
     if args.resume:
         init_ep = max(0, args.resume_ep)
         print('Resume training from the latest checkpoint.')
@@ -70,8 +70,8 @@ def train(args):
                 model.to(device)
             optimizer.zero_grad()
             output = model(data_img)
-            wh_pred = torch.abs(output[0]['wh'])
-            hm_loss = crit_hm(output[0]['hm'], data_hm)
+            wh_pred = torch.abs(output[-1]['wh'])
+            hm_loss = crit_hm(output[-1]['hm'], data_hm)
             wh_loss = crit_wh(wh_pred, data_wh)
 
             total_loss = hm_loss + lambda_s*wh_loss
@@ -93,8 +93,8 @@ def train(args):
                     data_wh = data_wh.cuda()
                     model.to(device)
                 output = model(data_img)
-                wh_pred = torch.abs(output[0]['wh'])
-                hm_loss = crit_hm(output[0]['hm'], data_hm)
+                wh_pred = torch.abs(output[-1]['wh'])
+                hm_loss = crit_hm(output[-1]['hm'], data_hm)
                 wh_loss = crit_wh(wh_pred, data_wh)
 
                 valid_hm_loss += hm_loss.item()
