@@ -22,8 +22,8 @@ def main(args):
         print('Batch:', data_img.shape)
         output = model(data_img)
         print('Output length:', len(output))
-        print('HM tensor:', output[0]['hm'].shape)
-        print('Box tensor:', output[0]['wh'].shape)
+        print('HM tensor:', output[-1]['hm'].shape)
+        print('Box tensor:', output[-1]['wh'].shape)
         print('GT HM tensor:', hm_gt.shape)
         print('GT Box tensor:', box_gt.shape)
         return
