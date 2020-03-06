@@ -7,7 +7,7 @@ from torch.utils import data
 class AbusNpyFormat(data.Dataset):
     def __init__(self, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False):
         self.root = root
-        with open(self.root + 'annotations/old_all.txt', 'r') as f:
+        with open(self.root + 'annotations/rand_all.txt', 'r') as f:
             lines = f.read().splitlines()
 
         folds = []
