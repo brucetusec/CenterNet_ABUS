@@ -16,8 +16,8 @@ torch.cuda.empty_cache()
 
 def train(args):
     print('Preparing...')
-    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False)
-    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True)
+    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False, downsample=0.5)
+    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True, downsample=0.5)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     validset_loader = DataLoader(validset, batch_size=1, shuffle=False, num_workers=0)
 
@@ -36,7 +36,7 @@ def train(args):
         'hm': 1,
         'wh': 3
     }
-    model = get_large_hourglass_net(heads, n_stacks=2)
+    model = get_large_hourglass_net(heads, n_stacks=1)
     if args.resume:
         init_ep = max(0, args.resume_ep)
         print('Resume training from the latest checkpoint.')
