@@ -8,7 +8,7 @@ from data.abus_data import AbusNpyFormat
 def main(args, root):
     size = (int(640*args.scale),160,int(640*args.scale))
 
-    with open(root + 'annotations/old_all.txt', 'r') as f:
+    with open(root + 'annotations/rand_all.txt', 'r') as f:
         lines = f.read().splitlines()
 
     line = lines[args.index]

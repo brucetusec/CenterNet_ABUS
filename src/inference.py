@@ -23,7 +23,7 @@ def main(args):
     model.eval()
     model = model.to(device)
 
-    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=args.fold_num, crx_partition='valid')
+    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=args.fold_num, crx_partition='valid', downsample=args.scale)
     trainset_loader = DataLoader(trainset, batch_size=1, shuffle=False, num_workers=0)
 
     start_time = time.time()
@@ -34,7 +34,6 @@ def main(args):
             output = model(data_img)
             print('***************************')
             print('Processing: ', f_name)
-            print('Output length:', len(output))
             wh_pred = torch.abs(output[-1]['wh'])
             hmax = nms(output[-1]['hm'])
             topk_scores, topk_inds = torch.topk(hmax.view(-1), 10)
@@ -51,10 +50,10 @@ def main(args):
                 w2 = wh_pred[0,2,z[i],y[i],x[i]].to(torch.uint8).item()
 
                 z_bot, z_top = _get_dilated_range(z[i], w0, scale=args.scale)
-                y_bot, y_top = _get_dilated_range(y[i], w1, scale=args.scale)
+                y_bot, y_top = _get_dilated_range(y[i], w1)
                 x_bot, x_top = _get_dilated_range(x[i], w2, scale=args.scale)
-
-                boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item(), 3)])
+                print([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
+                boxes.append([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
 
             boxes = np.array(boxes, dtype=float)
             np.save(os.path.join(npy_dir, f_name), boxes)
@@ -75,7 +74,7 @@ def _parse_args():
         help='Which fold serves as valid set?'
     )
     parser.add_argument(
-        '--scale', '-s', type=int, default=1,
+        '--scale', '-s', type=float, default=1,
         help='How much were x,z downsampled?'
     )
     return parser.parse_args()

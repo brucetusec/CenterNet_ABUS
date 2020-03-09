@@ -6,7 +6,7 @@ from PIL import Image, ImageFont, ImageDraw
 from data.abus_data import AbusNpyFormat
 
 def main(args, root):
-    with open(root + 'annotations/old_all.txt', 'r') as f:
+    with open(root + 'annotations/rand_all.txt', 'r') as f:
         lines = f.read().splitlines()
 
     line = lines[args.index]
