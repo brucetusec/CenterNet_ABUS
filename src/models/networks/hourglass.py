@@ -11,12 +11,12 @@ import torch.nn as nn
 from .basic import BasicModule
 
 class convolution(nn.Module):
-    def __init__(self, k, inp_dim, out_dim, stride=1, with_bn=True):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
         super(convolution, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_bn)
-        self.bn   = nn.BatchNorm3d(out_dim) if with_bn else nn.Sequential()
+        self.conv = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.bn   = nn.GroupNorm(16, out_dim) if with_gn else nn.Sequential()
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -25,37 +25,21 @@ class convolution(nn.Module):
         relu = self.relu(bn)
         return relu
 
-class fully_connected(nn.Module):
-    def __init__(self, inp_dim, out_dim, with_bn=True):
-        super(fully_connected, self).__init__()
-        self.with_bn = with_bn
-
-        self.linear = nn.Linear(inp_dim, out_dim)
-        if self.with_bn:
-            self.bn = nn.BatchNorm1d(out_dim)
-        self.relu   = nn.ReLU(inplace=True)
-
-    def forward(self, x):
-        linear = self.linear(x)
-        bn     = self.bn(linear) if self.with_bn else linear
-        relu   = self.relu(bn)
-        return relu
-
 class residual(nn.Module):
-    def __init__(self, k, inp_dim, out_dim, stride=1, with_bn=True):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
         super(residual, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_bn)
-        self.bn1   = nn.BatchNorm3d(out_dim)
+        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.bn1   = nn.GroupNorm(16, out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
         self.conv2 = nn.Conv3d(out_dim, out_dim, (3, 3, 3), padding=(1, 1, 1), bias=False)
-        self.bn2   = nn.BatchNorm3d(out_dim)
+        self.bn2   = nn.GroupNorm(16, out_dim)
         
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
-            nn.BatchNorm3d(out_dim)
+            nn.GroupNorm(16, out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
         self.relu  = nn.ReLU(inplace=True)
 
@@ -101,13 +85,13 @@ def make_unpool_layer(dim):
 
 def make_kp_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
-        convolution(3, cnv_dim, curr_dim, with_bn=False),
+        convolution(3, cnv_dim, curr_dim, with_gn=True),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1))
     )
 
 def make_hm_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
-        convolution(3, cnv_dim, curr_dim, with_bn=False),
+        convolution(3, cnv_dim, curr_dim, with_gn=True),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1)),
         nn.Sigmoid()
     )
@@ -232,13 +216,13 @@ class exkp(BasicModule):
         self.inters_ = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(curr_dim, curr_dim, (1, 1, 1), bias=False),
-                nn.BatchNorm3d(curr_dim)
+                nn.GroupNorm(16, out_dim)
             ) for _ in range(nstack - 1)
         ])
         self.cnvs_   = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(cnv_dim, curr_dim, (1, 1, 1), bias=False),
-                nn.BatchNorm3d(curr_dim)
+                nn.GroupNorm(16, out_dim)
             ) for _ in range(nstack - 1)
         ])
 
