@@ -16,7 +16,7 @@ class convolution(nn.Module):
 
         pad = (k - 1) // 2
         self.conv = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
-        self.bn   = nn.GroupNorm(16, out_dim) if with_gn else nn.Sequential()
+        self.bn   = nn.GroupNorm(8, out_dim) if with_gn else nn.Sequential()
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -31,15 +31,15 @@ class residual(nn.Module):
 
         pad = (k - 1) // 2
         self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
-        self.bn1   = nn.GroupNorm(16, out_dim)
+        self.bn1   = nn.GroupNorm(8, out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
         self.conv2 = nn.Conv3d(out_dim, out_dim, (3, 3, 3), padding=(1, 1, 1), bias=False)
-        self.bn2   = nn.GroupNorm(16, out_dim)
+        self.bn2   = nn.GroupNorm(8, out_dim)
         
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
-            nn.GroupNorm(16, out_dim)
+            nn.GroupNorm(8, out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
         self.relu  = nn.ReLU(inplace=True)
 
@@ -85,7 +85,7 @@ def make_unpool_layer(dim):
 
 def make_kp_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
-        convolution(3, cnv_dim, curr_dim, with_gn=False),
+        convolution(3, cnv_dim, curr_dim, with_gn=True),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1))
     )
 
@@ -188,8 +188,8 @@ class exkp(BasicModule):
         curr_dim = dims[0]
 
         self.pre = nn.Sequential(
-            convolution(7, 1, 16, stride=2),
-            residual(3, 16, 16, stride=2)
+            convolution(7, 1, 8, stride=2),
+            residual(3, 8, 32, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
@@ -216,13 +216,13 @@ class exkp(BasicModule):
         self.inters_ = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(curr_dim, curr_dim, (1, 1, 1), bias=False),
-                nn.GroupNorm(16, out_dim)
+                nn.GroupNorm(8, out_dim)
             ) for _ in range(nstack - 1)
         ])
         self.cnvs_   = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(cnv_dim, curr_dim, (1, 1, 1), bias=False),
-                nn.GroupNorm(16, out_dim)
+                nn.GroupNorm(8, out_dim)
             ) for _ in range(nstack - 1)
         ])
 
@@ -287,7 +287,7 @@ class HourglassNet(exkp):
         # How deep do you wanna go? (# of Connections between layers)
         n       = 2
         # Number of channel
-        dims    = [16, 64, 256]
+        dims    = [32, 64, 256]
         # Number of layers of convolution
         modules = [2, 2, 2]
 
@@ -295,7 +295,7 @@ class HourglassNet(exkp):
             n, num_stacks, dims, modules, heads,
             make_pool_layer=make_pool_layer,
             make_hg_layer=make_hg_layer,
-            kp_layer=residual, cnv_dim=16, debug=debug
+            kp_layer=residual, cnv_dim=32, debug=debug
         )
 
 def get_large_hourglass_net(heads, n_stacks=1, debug=False):
