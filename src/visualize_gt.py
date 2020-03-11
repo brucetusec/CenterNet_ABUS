@@ -6,13 +6,15 @@ from PIL import Image, ImageFont, ImageDraw
 from data.abus_data import AbusNpyFormat
 
 def main(args, root):
-    with open(root + 'annotations/old_all.txt', 'r') as f:
+    size = (int(640*args.scale),160,int(640*args.scale))
+
+    with open(root + 'annotations/rand_all.txt', 'r') as f:
         lines = f.read().splitlines()
 
     line = lines[args.index]
     line = line.split(',', 4)
 
-    data = np.load(root + 'converted_640_160_640/' + line[0].replace('/', '_'))
+    data = np.load(root + 'converted_{}_{}_{}/'.format(size[0], size[1], size[2]) + line[0].replace('/', '_'))
     boxes = line[-1].split(' ')
     boxes = list(map(lambda box: box.split(','), boxes))
     boxes = [list(map(float, box)) for box in boxes]
@@ -31,7 +33,7 @@ def main(args, root):
         'x_center': (box[2] + box[5]) / 2,
     } for box in boxes]
 
-    size = (640,160,640)
+    
     scale = (size[0]/int(line[1]),size[1]/int(line[2]),size[2]/int(line[3]))
 
     img_dir = os.path.join(args.save_dir, 'gt', str(args.index))
@@ -61,6 +63,10 @@ def _parse_args():
     )
     parser.add_argument(
         '--index', '-i', type=int, required=True,
+        help='Which image to draw.'
+    )
+    parser.add_argument(
+        '--scale', '-r', type=float, required=False, default=1,
         help='Which image to draw.'
     )
     return parser.parse_args()

@@ -20,27 +20,24 @@ def gaussian3D(shape, sigma=1):
     h[h < np.finfo(h.dtype).eps * h.max()] = 0
     return h
 
-def gen_3d_heatmap(size, gt_boxes, scale=1):
+def gen_3d_heatmap(size, gt_boxes, scale=1, downscale=1):
     size = [w//scale for w in size]
     hm = np.zeros(size, dtype=np.float32)
 
     for bbox in gt_boxes:
-        half_width = (int(bbox['z_range']//scale), int(bbox['y_range']//scale), int(bbox['x_range']//scale))
+        half_width = (int(bbox['z_range']*downscale//scale), int(bbox['y_range']//scale), int(bbox['x_range']*downscale//scale))
         # min width must be at least 1
         half_width = [w if w > 0 else 1 for w in half_width]
         expand = map(lambda x: x+1 if x%2 == 0 else x, half_width)
         half_width = tuple(expand)
-        # print('center:', (bbox['z_center']//scale, bbox['y_center']//scale, bbox['x_center']//scale), 'half-w:', half_width)
-        # print(half_width)
         gauss_3d = gaussian3D(half_width, sigma=2)
-        start_point = (int(bbox['z_bot']//scale), int(bbox['y_bot']//scale), int(bbox['x_bot']//scale))
-        # print(gauss_3d)
+        start_point = (int(bbox['z_bot']*downscale//scale), int(bbox['y_bot']//scale), int(bbox['x_bot']*downscale//scale))
         layer = _embed_matrix(size, gauss_3d, start_point)
         hm = np.maximum(hm, layer)
 
     return hm
 
-def gen_3d_hw(size, gt_boxes, scale=1):
+def gen_3d_hw(size, gt_boxes, scale=1, downscale=1):
     size = [w//scale for w in size]
     hw_x = np.zeros(size, dtype=np.float32)
     hw_y = np.zeros(size, dtype=np.float32)
@@ -48,8 +45,8 @@ def gen_3d_hw(size, gt_boxes, scale=1):
 
     for bbox in gt_boxes:
         ori_shape = (int(bbox['z_range']), int(bbox['y_range']), int(bbox['x_range']))
-        shape = (int(bbox['z_range'])//scale, int(bbox['y_range'])//scale, int(bbox['x_range'])//scale)
-        start_point = (int(bbox['z_bot']//scale), int(bbox['y_bot']//scale), int(bbox['x_bot']//scale ))
+        shape = (int(bbox['z_range']*downscale)//scale, int(bbox['y_range'])//scale, int(bbox['x_range']*downscale)//scale)
+        start_point = (int(bbox['z_bot']*downscale//scale), int(bbox['y_bot']//scale), int(bbox['x_bot']*downscale//scale))
         chunk = np.full(shape, ori_shape[2], dtype=np.float32)
         layer = _embed_matrix(size, chunk, start_point)
         hw_x = np.maximum(hw_x, layer)

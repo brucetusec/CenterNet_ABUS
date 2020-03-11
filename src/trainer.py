@@ -16,8 +16,8 @@ torch.cuda.empty_cache()
 
 def train(args):
     print('Preparing...')
-    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False)
-    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True)
+    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False, downsample=1)
+    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True, downsample=1)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     validset_loader = DataLoader(validset, batch_size=1, shuffle=False, num_workers=0)
 
@@ -133,8 +133,8 @@ def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--crx_valid', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=2)
-    parser.add_argument('--max_epoch', type=int, default=80)
-    parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--max_epoch', type=int, default=60)
+    parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--lambda_s', type=float, default=0.1)
     parser.add_argument('--resume', type=bool, default=False)
     parser.add_argument('--resume_ep', type=int, default=0)

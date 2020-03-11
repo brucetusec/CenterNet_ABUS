@@ -1,4 +1,4 @@
-import os
+import os, argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from utils.postprocess import eval_precision_recall
@@ -36,7 +36,7 @@ def build_threshold():
     return thresholds
 
 
-def main():
+def main(args):
     num_npy = os.listdir(npy_dir) # dir is your directory path
     total_pass = len(num_npy)
     all_thre=build_threshold()
@@ -59,11 +59,12 @@ def main():
 
 
         current_pass = 0
-        with open(root + 'annotations/old_all.txt', 'r') as f:
+        with open(root + 'annotations/rand_all.txt', 'r') as f:
             lines = f.read().splitlines()
 
         for line in lines:
             line = line.split(',', 4)
+            # Always use 640,160,640 to compute iou
             size = (640,160,640)
             scale = (size[0]/int(line[1]),size[1]/int(line[2]),size[2]/int(line[3]))
             pred_npy = npy_dir + line[0].replace('/', '_')
@@ -185,6 +186,9 @@ def main():
     # np.save(data_save_to,performnace_per_thre)
 
     data = performnace_per_thre
+    if len(data) == 0:
+        print('Inference result is empty.')
+        return
 
     font = {'family': 'Times New Roman',
             'size': 12}
@@ -202,14 +206,24 @@ def main():
     axes.set_ylim(0.125, 1.01)
     y_tick = np.arange(0, 1, 0.125)
     plt.yticks(y_tick)
-    plt.legend(loc='lower right')
+    plt.legend(loc='lower left')
     plt.ylabel('Precision')
     plt.xlabel('Sensitivity')
     plt.savefig('map_test.png')
     plt.show()
 
 
+def _parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--scale', '-s', type=int, default=1,
+        help='How much were x,z downsampled?'
+    )
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
     root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
     npy_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'results/prediction/')
-    main()
+    args = _parse_args()
+    main(args)

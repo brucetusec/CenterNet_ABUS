@@ -7,13 +7,13 @@ from data.abus_data import AbusNpyFormat
 from utils.postprocess import nms 
 from models.networks.hourglass import get_large_hourglass_net
 
-def _get_dilated_range(coord, width, scale=4):
-    center = scale*coord + scale//2
+def _get_dilated_range(coord, width, scale=1):
+    center = (4*coord + 2) / scale
     return (center - width//2), (center + width//2)
 
 def main(args):
-    scale = 4
-
+    size = (int(160*args.scale), 40, int(160*args.scale))
+ 
     heads = {
         'hm': 1, # 1 channel Probability heat map.
         'wh': 3  # 3 channel x,y,z size regression.
@@ -23,39 +23,40 @@ def main(args):
     model.eval()
     model = model.to(device)
 
-    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=args.fold_num, crx_partition='valid')
+    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=args.fold_num, crx_partition='valid', downsample=args.scale)
     trainset_loader = DataLoader(trainset, batch_size=1, shuffle=False, num_workers=0)
 
     start_time = time.time()
-    for batch_idx, (data_img, hm_gt, box_gt, extra_info) in enumerate(trainset_loader):
-        f_name = trainset.getName(extra_info[1])
-        data_img = data_img.to(device)
-        output = model(data_img)
-        print('***************************')
-        print('Processing: ', f_name)
-        print('Output length:', len(output))
-        wh_pred = torch.abs(output[0]['wh'])
-        hmax = nms(output[0]['hm'])
-        topk_scores, topk_inds = torch.topk(hmax.view(-1), 10)
-        print('Top 10 predicted score:', list(map(lambda score: round(score, 3), topk_scores.tolist())))
-        z = topk_inds/(40*160)
-        y = (topk_inds % (40*160))/160
-        x = ((topk_inds % (40*160)) % 160)
+    with torch.no_grad():
+        for batch_idx, (data_img, hm_gt, box_gt, extra_info) in enumerate(trainset_loader):
+            f_name = trainset.getName(extra_info[1])
+            data_img = data_img.to(device)
+            output = model(data_img)
+            print('***************************')
+            print('Processing: ', f_name)
+            wh_pred = torch.abs(output[-1]['wh'])
+            hmax = nms(output[-1]['hm'])
+            topk_scores, topk_inds = torch.topk(hmax.view(-1), 10)
+            print('Top 10 predicted score:', list(map(lambda score: round(score, 3), topk_scores.tolist())))
+            z = topk_inds/(size[1]*size[0])
+            y = (topk_inds % (size[1]*size[0]))/size[2]
+            x = ((topk_inds % (size[1]*size[0])) % size[2])
 
-        boxes = []
-        for i in range(topk_scores.shape[0]):
-            w0 = wh_pred[0,0,z[i],y[i],x[i]].to(torch.uint8).item()
-            w1 = wh_pred[0,1,z[i],y[i],x[i]].to(torch.uint8).item()
-            w2 = wh_pred[0,2,z[i],y[i],x[i]].to(torch.uint8).item()
+            boxes = []
+            for i in range(topk_scores.shape[0]):
+                # w0, w1, w2 should be stored in 640,160,640
+                w0 = wh_pred[0,0,z[i],y[i],x[i]].to(torch.uint8).item()
+                w1 = wh_pred[0,1,z[i],y[i],x[i]].to(torch.uint8).item()
+                w2 = wh_pred[0,2,z[i],y[i],x[i]].to(torch.uint8).item()
 
-            z_bot, z_top = _get_dilated_range(z[i], w0, scale=scale)
-            y_bot, y_top = _get_dilated_range(y[i], w1, scale=scale)
-            x_bot, x_top = _get_dilated_range(x[i], w2, scale=scale)
+                z_bot, z_top = _get_dilated_range(z[i], w0, scale=args.scale)
+                y_bot, y_top = _get_dilated_range(y[i], w1)
+                x_bot, x_top = _get_dilated_range(x[i], w2, scale=args.scale)
+                print([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
+                boxes.append([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
 
-            boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item(), 3)])
-
-        boxes = np.array(boxes, dtype=float)
-        np.save(os.path.join(npy_dir, f_name), boxes)
+            boxes = np.array(boxes, dtype=float)
+            np.save(os.path.join(npy_dir, f_name), boxes)
 
     print("Inference finished.")
     print("Average time cost: {:.2f} sec.".format((time.time() - start_time)/trainset.__len__()))
@@ -71,6 +72,10 @@ def _parse_args():
     parser.add_argument(
         '--fold_num', '-f', type=int, default=4,
         help='Which fold serves as valid set?'
+    )
+    parser.add_argument(
+        '--scale', '-s', type=float, default=1,
+        help='How much were x,z downsampled?'
     )
     return parser.parse_args()
 
