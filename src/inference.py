@@ -92,11 +92,11 @@ def main(args):
             boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
 
             # Third round
-            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
-            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
-            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
-            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
-            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
 
             boxes = np.array(boxes, dtype=float)
             np.save(os.path.join(npy_dir, f_name), boxes)
