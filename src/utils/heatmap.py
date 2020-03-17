@@ -38,7 +38,7 @@ def gen_3d_heatmap(size, gt_boxes, scale=1, downscale=1):
         if full_width[2]<5:
             full_width[2] = 5
             start_point[2] = max(0, int(bbox['x_center']*downscale//scale) - 2)
-        elif full_width[1]<5:
+        if full_width[1]<5:
             full_width[1] = 5
             start_point[1] = max(0, int(bbox['y_center']//scale) - 2)
 
