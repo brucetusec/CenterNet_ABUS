@@ -188,8 +188,8 @@ class exkp(BasicModule):
         curr_dim = dims[0]
 
         self.pre = nn.Sequential(
-            convolution(7, 1, 8, stride=2),
-            residual(3, 8, 32, stride=2)
+            convolution(7, 1, 16, stride=2),
+            residual(3, 16, 32, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
@@ -287,7 +287,7 @@ class HourglassNet(exkp):
         # How deep do you wanna go? (# of Connections between layers)
         n       = 2
         # Number of channel
-        dims    = [32, 64, 256]
+        dims    = [32, 64, 128]
         # Number of layers of convolution
         modules = [2, 2, 2]
 
