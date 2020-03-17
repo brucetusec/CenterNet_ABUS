@@ -34,13 +34,13 @@ def gen_3d_heatmap(size, gt_boxes, scale=1, downscale=1):
 
         if full_width[0]<5:
             full_width[0] = 5
-            start_point[0] = int(bbox['z_center']*downscale//scale) - 2
+            start_point[0] = max(0, int(bbox['z_center']*downscale//scale) - 2)
         if full_width[2]<5:
             full_width[2] = 5
-            start_point[2] = int(bbox['x_center']*downscale//scale) - 2
+            start_point[2] = max(0, int(bbox['x_center']*downscale//scale) - 2)
         elif full_width[1]<5:
             full_width[1] = 5
-            start_point[1] = int(bbox['y_center']//scale) - 2
+            start_point[1] = max(0, int(bbox['y_center']//scale) - 2)
 
         gauss_3d = gaussian3D(full_width, sigma=2)
         layer = _embed_matrix(size, gauss_3d, start_point)
