@@ -91,7 +91,7 @@ def make_kp_layer(cnv_dim, curr_dim, out_dim):
 
 def make_hm_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
-        convolution(3, cnv_dim, curr_dim, with_gn=False),
+        convolution(3, cnv_dim, curr_dim, with_gn=True),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1)),
         nn.Sigmoid()
     )
@@ -216,13 +216,13 @@ class exkp(BasicModule):
         self.inters_ = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(curr_dim, curr_dim, (1, 1, 1), bias=False),
-                nn.GroupNorm(8, out_dim)
+                nn.GroupNorm(8, curr_dim)
             ) for _ in range(nstack - 1)
         ])
         self.cnvs_   = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(cnv_dim, curr_dim, (1, 1, 1), bias=False),
-                nn.GroupNorm(8, out_dim)
+                nn.GroupNorm(8, curr_dim)
             ) for _ in range(nstack - 1)
         ])
 

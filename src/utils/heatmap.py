@@ -29,8 +29,8 @@ def gen_3d_heatmap(size, gt_boxes, scale=1, downscale=1):
         # min width must be at least 1
         full_width = [w if w > 0 else 1 for w in full_width]
         expand = map(lambda x: x+1 if x%2 == 0 else x, full_width)
-        full_width = tuple(expand)
-        start_point = (int(bbox['z_bot']*downscale//scale), int(bbox['y_bot']//scale), int(bbox['x_bot']*downscale//scale))
+        full_width = list(expand)
+        start_point = [int(bbox['z_bot']*downscale//scale), int(bbox['y_bot']//scale), int(bbox['x_bot']*downscale//scale)]
 
         if full_width[0]<5:
             full_width[0] = 5
