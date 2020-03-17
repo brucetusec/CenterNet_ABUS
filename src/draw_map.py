@@ -40,23 +40,19 @@ def main(args):
     num_npy = os.listdir(npy_dir) # dir is your directory path
     total_pass = len(num_npy)
     all_thre=build_threshold()
-    performnace_per_thre=[]
+    PERF_per_thre=[]
+    PERF_per_thre_s=[]
 
     for score_hit_thre in all_thre:
         print('Use threshold: {:.3f}'.format(score_hit_thre))
 
         TP_table, FP_table, FN_table, \
         TP_table_IOU_1, FP_table_IOU_1, FN_table_IOU_1, \
-        true_num, pred_num, \
-        file_table, iou_table, score_table, \
-        mean_score_table, std_score_table = [], [], [], [], [], [], [], [], [], [], [], [], []
-
-        hit_small_size_cnt = np.array([0, 0, 0])
-        miss_small_size_cnt = np.array([0, 0, 0])
-
-        hit_large_size_cnt = np.array([0, 0, 0])
-        miss_large_size_cnt = np.array([0, 0, 0])
-
+        true_num, pred_num, file_table, iou_table \
+        = [], [], [], [], [], [], [], [], [], []
+        # , score_table, mean_score_table, std_score_table
+        TP_table_s, FP_table_s, FN_table_s, \
+        TP_table_IOU_1_s, FP_table_IOU_1_s, FN_table_IOU_1_s = [], [], [], [], [], []
 
         current_pass = 0
         with open(root + 'annotations/rand_all.txt', 'r') as f:
@@ -72,14 +68,15 @@ def main(args):
                 continue
             else:
                 current_pass += 1
-                print('Processing {}/{} data...'.format(current_pass, total_pass), end="\r")
+                print('Processing {}/{} data...'.format(current_pass, total_pass), end='\r')
                 if current_pass == total_pass:
                     print("\n")
 
             boxes = line[-1].split(' ')
             boxes = list(map(lambda box: box.split(','), boxes))
             true_box = [list(map(float, box)) for box in boxes]
-
+            true_box_s = list(filter(lambda li: li[3]-li[0]<=20 or li[5]-li[2]<=20, true_box))
+            #true_box = list(filter(lambda li: li[3]-li[0]>20 and li[5]-li[2]>20, ground_true_box))
             file_name = line[0]
             file_table.append(file_name)
             true_num.append([len(true_box)])
@@ -89,7 +86,7 @@ def main(args):
             box_list = np.load(pred_npy)
             for bx in box_list:
                 if bx[6] >= score_hit_thre:
-                    out_boxes.append(bx)
+                    out_boxes.append(list(bx))
 
             TP, FP, FN, hits_index, hits_iou, hits_score = eval_precision_recall(
                 out_boxes, true_box, 0.25, scale)
@@ -97,43 +94,37 @@ def main(args):
             TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1 = eval_precision_recall(
                 out_boxes, true_box, 0.1, scale)
 
-            # for gt_idx, box in enumerate(true_box):
-            #     smallest_size=min(box[3:6]-box[0:3])
-            #     largest_size=max(box[3:6]-box[0:3])
-            #     smallest_tumor_type = None
-            #     largest_tumor_type = None
-            #     if smallest_size <= 20:
-            #         smallest_tumor_type = 0
-            #     elif smallest_size < 40:
-            #         smallest_tumor_type = 1
-            #     else:
-            #         smallest_tumor_type = 2
-                
-            #     if largest_size <= 40:
-            #         largest_tumor_type = 0
-            #     elif largest_size < 60:
-            #         largest_tumor_type = 1
-            #     else:
-            #         largest_tumor_type = 2
-
-            #     if hits_index_ChonHua_1[gt_idx]!=-1:
-            #         hit_small_size_cnt[smallest_tumor_type] += 1
-            #         hit_large_size_cnt[largest_tumor_type] += 1
-            #     else:
-            #         miss_small_size_cnt[smallest_tumor_type] += 1
-            #         miss_large_size_cnt[largest_tumor_type]+=1
-
-
             pred_num.append([len(out_boxes)])
 
-            TP_table.append([TP])
-            FP_table.append([FP])
-            FN_table.append([FN])
+            TP_table.append(TP)
+            FP_table.append(FP)
+            FN_table.append(FN)
 
-            TP_table_IOU_1.append([TP_IOU_1])
-            FP_table_IOU_1.append([FP_IOU_1])
-            FN_table_IOU_1.append([FN_IOU_1])
-        
+            TP_table_IOU_1.append(TP_IOU_1)
+            FP_table_IOU_1.append(FP_IOU_1)
+            FN_table_IOU_1.append(FN_IOU_1)
+
+            ##########################################
+            # Small tumor
+            out_boxes_s = []
+
+            for bx in box_list:
+                if bx[6] >= score_hit_thre and (bx[3]-bx[0]<=20 or bx[5]-bx[2]<=20):
+                    out_boxes_s.append(list(bx))
+
+            TP_s, FP_s, FN_s, hits_index_s, hits_iou_s, hits_score_s = eval_precision_recall(
+                out_boxes_s, true_box_s, 0.25, scale)
+
+            TP_IOU_1_s, FP_IOU_1_s, FN_IOU_1_s, hits_index_IOU_1_s, hits_iou_IOU_1_s, hits_score_IOU_1_s = eval_precision_recall(
+                out_boxes_s, true_box_s, 0.1, scale)
+
+            TP_table_s.append(TP_s)
+            FP_table_s.append(FP_s)
+            FN_table_s.append(FN_s)
+
+            TP_table_IOU_1_s.append(TP_IOU_1_s)
+            FP_table_IOU_1_s.append(FP_IOU_1_s)
+            FN_table_IOU_1_s.append(FN_IOU_1_s)
         
         TP_table_sum = np.array(TP_table)
         FP_table_sum = np.array(FP_table)
@@ -143,33 +134,42 @@ def main(args):
         FP_table_sum_IOU_1 = np.array(FP_table_IOU_1)
         FN_table_sum_IOU_1 = np.array(FN_table_IOU_1)
 
+        TP_table_sum_s = np.array(TP_table_s)
+        FP_table_sum_s = np.array(FP_table_s)
+        FN_table_sum_s = np.array(FN_table_s)
+
+        TP_table_sum_IOU_1_s = np.array(TP_table_IOU_1_s)
+        FP_table_sum_IOU_1_s = np.array(FP_table_IOU_1_s)
+        FN_table_sum_IOU_1_s = np.array(FN_table_IOU_1_s)
+
+        sum_TP, sum_FP, sum_FN = TP_table_sum.sum(), FP_table_sum.sum(), FN_table_sum.sum()
+        sensitivity = sum_TP/(sum_TP+sum_FN+1e-10)
+        precision = sum_TP/(sum_TP+sum_FP+1e-10)
 
         sum_TP_IOU_1, sum_FP_IOU_1, sum_FN_IOU_1 = TP_table_sum_IOU_1.sum(), FP_table_sum_IOU_1.sum(), FN_table_sum_IOU_1.sum()
         sensitivity_IOU_1 = sum_TP_IOU_1/(sum_TP_IOU_1+sum_FN_IOU_1+1e-10)
         precision_IOU_1 = sum_TP_IOU_1/(sum_TP_IOU_1+sum_FP_IOU_1+1e-10)
 
+        sum_TP_s, sum_FP_s, sum_FN_s = TP_table_sum_s.sum(), FP_table_sum_s.sum(), FN_table_sum_s.sum()
+        sensitivity_s = sum_TP_s/(sum_TP_s+sum_FN_s+1e-10)
+        precision_s = sum_TP_s/(sum_TP_s+sum_FP_s+1e-10)
 
-        true_num_sum = np.array(true_num)
-        pred_num_sum = np.array(pred_num)
-        iou_table = np.array(iou_table)
-        score_table = np.array(score_table)
-        mean_score_table = np.array(mean_score_table)
-        std_score_table = np.array(std_score_table)
+        sum_TP_IOU_1_s, sum_FP_IOU_1_s, sum_FN_IOU_1_s = TP_table_sum_IOU_1_s.sum(), FP_table_sum_IOU_1_s.sum(), FN_table_sum_IOU_1_s.sum()
+        sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
+        precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
+
+
+        # true_num_sum = np.array(true_num)
+        # pred_num_sum = np.array(pred_num)
+        # iou_table = np.array(iou_table)
+        # score_table = np.array(score_table)
+        # mean_score_table = np.array(mean_score_table)
+        # std_score_table = np.array(std_score_table)
         
-        sum_TP, sum_FP, sum_FN, sum_true, sum_pred = TP_table_sum.sum(), FP_table_sum.sum(), FN_table_sum.sum(), true_num_sum.sum(), pred_num_sum.sum()
-        sensitivity = sum_TP/(sum_TP+sum_FN+1e-10)
-        precision = sum_TP/(sum_TP+sum_FP+1e-10)
-        # sen0=hit_small_size_cnt[0]/(hit_small_size_cnt[0]+miss_small_size_cnt[0]+1e-10)
-        # sen1=hit_small_size_cnt[1]/(hit_small_size_cnt[1]+miss_small_size_cnt[1]+1e-10)
-        # sen2=hit_small_size_cnt[2]/(hit_small_size_cnt[2]+miss_small_size_cnt[2]+1e-10)
-        
-        
-        # big_sen0=hit_large_size_cnt[0]/(hit_large_size_cnt[0]+miss_large_size_cnt[0]+1e-10)
-        # big_sen1=hit_large_size_cnt[1]/(hit_large_size_cnt[1]+miss_large_size_cnt[1]+1e-10)
-        # big_sen2=hit_large_size_cnt[2]/(hit_large_size_cnt[2]+miss_large_size_cnt[2]+1e-10)
+        # sum_TP, sum_FP, sum_FN, sum_true, sum_pred = TP_table_sum.sum(), FP_table_sum.sum(), FN_table_sum.sum(), true_num_sum.sum(), pred_num_sum.sum()
 
         if sensitivity > 0.125:
-            performnace_per_thre.append([
+            PERF_per_thre.append([
                 score_hit_thre,
                 total_pass,
                 sensitivity,
@@ -179,24 +179,34 @@ def main(args):
                 precision_IOU_1,
                 sum_FP_IOU_1/total_pass])
 
-            # sen0,sen1,sen2,big_sen0,big_sen1,big_sen2
-
-
-    performnace_per_thre=np.array(performnace_per_thre)
+        if sensitivity_s > 0.125:
+            PERF_per_thre_s.append([
+                score_hit_thre,
+                total_pass,
+                sensitivity_s,
+                precision_s,
+                sum_FP_s/total_pass,
+                sensitivity_IOU_1_s,
+                precision_IOU_1_s,
+                sum_FP_IOU_1_s/total_pass])
+            
+    data = np.array(PERF_per_thre)
+    data_s = np.array(PERF_per_thre_s)
     # np.save(data_save_to,performnace_per_thre)
 
-    data = performnace_per_thre
     if len(data) == 0:
         print('Inference result is empty.')
         return
 
     font = {'family': 'Times New Roman',
-            'size': 12}
+            'size': 9}
 
     plt.rc('font', **font)
 
     draw_full(data[..., 2], data[..., 3], '#FF6D6C', 'IOU > 0.25 ', ':', 1)
     draw_full(data[..., 5], data[..., 6], '#FF0000', 'IOU > 0.10 ', '-', 1)
+    draw_full(data_s[..., 2], data_s[..., 3], '#6D6CFF', 'IOU > 0.25 ', ':', 1)
+    draw_full(data_s[..., 5], data_s[..., 6], '#0000FF', 'IOU > 0.10 ', '-', 1)
 
     axes = plt.gca()
     axes.set_aspect('auto')

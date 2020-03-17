@@ -11,6 +11,55 @@ def _get_dilated_range(coord, width, scale=1):
     center = (4*coord + 2) / scale
     return (center - width//2), (center + width//2)
 
+def _get_topk_wipeoff(boxes, output, size, wh_pred, topk=10, scale=1):
+    hmax = nms(output[-1]['hm'])
+    topk_scores, topk_inds = torch.topk(hmax.view(-1), topk)
+    print('Top {} predicted score:'.format(topk), list(map(lambda score: round(score, 3), topk_scores.tolist())))
+    z = topk_inds/(size[1]*size[0])
+    y = (topk_inds % (size[1]*size[0]))/size[2]
+    x = ((topk_inds % (size[1]*size[0])) % size[2])
+
+    for i in range(topk_scores.shape[0]):
+        # w0, w1, w2 should be stored in 640,160,640
+        w0 = wh_pred[0,0,z[i],y[i],x[i]].to(torch.uint8).item()
+        w1 = wh_pred[0,1,z[i],y[i],x[i]].to(torch.uint8).item()
+        w2 = wh_pred[0,2,z[i],y[i],x[i]].to(torch.uint8).item()
+
+        z_bot, z_top = _get_dilated_range(z[i], w0, scale=args.scale)
+        y_bot, y_top = _get_dilated_range(y[i], w1)
+        x_bot, x_top = _get_dilated_range(x[i], w2, scale=args.scale)
+        boxes.append([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
+        # Too lazy
+        output[-1]['hm'][0,0,z[i],y[i],x[i]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],x[i]] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i],x[i]] = 0
+        output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],x[i]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]] = 0
+        output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],x[i]] = 0
+        output[-1]['hm'][0,0,z[i],y[i]-1,x[i]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,x[i]] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i]-1,x[i]] = 0
+        output[-1]['hm'][0,0,z[i],y[i],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i],y[i]-1,(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i]-1,(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i],y[i],x[i]-1] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],x[i]-1] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i],x[i]-1] = 0
+        output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],x[i]-1] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]-1] = 0
+        output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],x[i]-1] = 0
+        output[-1]['hm'][0,0,z[i],y[i]-1,x[i]-1] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,x[i]-1] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i]-1,x[i]-1] = 0
+    
+    return boxes
+
 def main(args):
     size = (int(160*args.scale), 40, int(160*args.scale))
  
@@ -35,25 +84,19 @@ def main(args):
             print('***************************')
             print('Processing: ', f_name)
             wh_pred = torch.abs(output[-1]['wh'])
-            hmax = nms(output[-1]['hm'])
-            topk_scores, topk_inds = torch.topk(hmax.view(-1), 10)
-            print('Top 10 predicted score:', list(map(lambda score: round(score, 3), topk_scores.tolist())))
-            z = topk_inds/(size[1]*size[0])
-            y = (topk_inds % (size[1]*size[0]))/size[2]
-            x = ((topk_inds % (size[1]*size[0])) % size[2])
-
             boxes = []
-            for i in range(topk_scores.shape[0]):
-                # w0, w1, w2 should be stored in 640,160,640
-                w0 = wh_pred[0,0,z[i],y[i],x[i]].to(torch.uint8).item()
-                w1 = wh_pred[0,1,z[i],y[i],x[i]].to(torch.uint8).item()
-                w2 = wh_pred[0,2,z[i],y[i],x[i]].to(torch.uint8).item()
+            # First round
+            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=10)
 
-                z_bot, z_top = _get_dilated_range(z[i], w0, scale=args.scale)
-                y_bot, y_top = _get_dilated_range(y[i], w1)
-                x_bot, x_top = _get_dilated_range(x[i], w2, scale=args.scale)
-                print([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
-                boxes.append([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
+            # Second round
+            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+
+            # Third round
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
 
             boxes = np.array(boxes, dtype=float)
             np.save(os.path.join(npy_dir, f_name), boxes)
