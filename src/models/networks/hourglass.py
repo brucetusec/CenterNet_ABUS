@@ -85,13 +85,13 @@ def make_unpool_layer(dim):
 
 def make_kp_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
-        convolution(3, cnv_dim, curr_dim, with_gn=True),
+        convolution(3, cnv_dim, curr_dim, with_gn=False),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1))
     )
 
 def make_hm_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
-        convolution(3, cnv_dim, curr_dim, with_gn=True),
+        convolution(3, cnv_dim, curr_dim, with_gn=False),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1)),
         nn.Sigmoid()
     )
@@ -189,7 +189,7 @@ class exkp(BasicModule):
 
         self.pre = nn.Sequential(
             convolution(7, 1, 16, stride=2),
-            residual(3, 16, 32, stride=2)
+            residual(3, 16, 16, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
@@ -287,7 +287,7 @@ class HourglassNet(exkp):
         # How deep do you wanna go? (# of Connections between layers)
         n       = 2
         # Number of channel
-        dims    = [32, 64, 128]
+        dims    = [16, 32, 64]
         # Number of layers of convolution
         modules = [2, 2, 2]
 
@@ -295,7 +295,7 @@ class HourglassNet(exkp):
             n, num_stacks, dims, modules, heads,
             make_pool_layer=make_pool_layer,
             make_hg_layer=make_hg_layer,
-            kp_layer=residual, cnv_dim=32, debug=debug
+            kp_layer=residual, cnv_dim=16, debug=debug
         )
 
 def get_large_hourglass_net(heads, n_stacks=1, debug=False):

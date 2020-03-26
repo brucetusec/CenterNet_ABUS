@@ -42,13 +42,14 @@ def main(args):
     all_thre=build_threshold()
     PERF_per_thre=[]
     PERF_per_thre_s=[]
+    true_num, true_small_num = 0, 0
 
-    for score_hit_thre in all_thre:
+    for i, score_hit_thre in enumerate(all_thre):
         print('Use threshold: {:.3f}'.format(score_hit_thre))
 
         TP_table, FP_table, FN_table, \
         TP_table_IOU_1, FP_table_IOU_1, FN_table_IOU_1, \
-        true_num, pred_num, file_table, iou_table \
+        pred_num, pred_small_num, file_table, iou_table \
         = [], [], [], [], [], [], [], [], [], []
         # , score_table, mean_score_table, std_score_table
         TP_table_s, FP_table_s, FN_table_s, \
@@ -76,10 +77,12 @@ def main(args):
             boxes = list(map(lambda box: box.split(','), boxes))
             true_box = [list(map(float, box)) for box in boxes]
             true_box_s = list(filter(lambda li: li[3]-li[0]<=20 or li[5]-li[2]<=20, true_box))
+            if i == 0:
+                true_num += len(true_box)
+                true_small_num += len(true_box_s)
             #true_box = list(filter(lambda li: li[3]-li[0]>20 and li[5]-li[2]>20, ground_true_box))
             file_name = line[0]
             file_table.append(file_name)
-            true_num.append([len(true_box)])
             
             ##########################################
             out_boxes = []
@@ -88,13 +91,13 @@ def main(args):
                 if bx[6] >= score_hit_thre:
                     out_boxes.append(list(bx))
 
+            pred_num.append(len(out_boxes))
+
             TP, FP, FN, hits_index, hits_iou, hits_score = eval_precision_recall(
                 out_boxes, true_box, 0.25, scale)
 
             TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1 = eval_precision_recall(
                 out_boxes, true_box, 0.1, scale)
-
-            pred_num.append([len(out_boxes)])
 
             TP_table.append(TP)
             FP_table.append(FP)
@@ -111,6 +114,8 @@ def main(args):
             for bx in box_list:
                 if bx[6] >= score_hit_thre and (bx[3]-bx[0]<=20 or bx[5]-bx[2]<=20):
                     out_boxes_s.append(list(bx))
+
+            pred_small_num.append(len(out_boxes_s))
 
             TP_s, FP_s, FN_s, hits_index_s, hits_iou_s, hits_score_s = eval_precision_recall(
                 out_boxes_s, true_box_s, 0.25, scale)
@@ -158,15 +163,9 @@ def main(args):
         sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
         precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
 
-
-        # true_num_sum = np.array(true_num)
-        # pred_num_sum = np.array(pred_num)
-        # iou_table = np.array(iou_table)
-        # score_table = np.array(score_table)
-        # mean_score_table = np.array(mean_score_table)
-        # std_score_table = np.array(std_score_table)
-        
-        # sum_TP, sum_FP, sum_FN, sum_true, sum_pred = TP_table_sum.sum(), FP_table_sum.sum(), FN_table_sum.sum(), true_num_sum.sum(), pred_num_sum.sum()
+        # pred_num = np.array(pred_num)
+        # pred_small_num = np.array(pred_small_num)
+        # print('Small/All tumors: {}/{}'.format(pred_small_num.sum(), pred_num.sum()))
 
         if sensitivity > 0.125:
             PERF_per_thre.append([
@@ -189,24 +188,29 @@ def main(args):
                 sensitivity_IOU_1_s,
                 precision_IOU_1_s,
                 sum_FP_IOU_1_s/total_pass])
-            
+
+    print('Small/All tumors: {}/{}'.format(true_small_num, true_num))
+
     data = np.array(PERF_per_thre)
     data_s = np.array(PERF_per_thre_s)
     # np.save(data_save_to,performnace_per_thre)
-
-    if len(data) == 0:
-        print('Inference result is empty.')
-        return
 
     font = {'family': 'Times New Roman',
             'size': 9}
 
     plt.rc('font', **font)
 
-    draw_full(data[..., 2], data[..., 3], '#FF6D6C', 'IOU > 0.25 ', ':', 1)
-    draw_full(data[..., 5], data[..., 6], '#FF0000', 'IOU > 0.10 ', '-', 1)
-    draw_full(data_s[..., 2], data_s[..., 3], '#6D6CFF', 'IOU > 0.25 ', ':', 1)
-    draw_full(data_s[..., 5], data_s[..., 6], '#0000FF', 'IOU > 0.10 ', '-', 1)
+    if len(data) == 0:
+        print('Inference result is empty.')
+    else:
+        draw_full(data[..., 2], data[..., 3], '#FF6D6C', 'IOU > 0.25 ', ':', 1)
+        draw_full(data[..., 5], data[..., 6], '#FF0000', 'IOU > 0.10 ', '-', 1)
+
+    if len(data_s) == 0:
+        print('Inference result for small is empty.')
+    else:
+        draw_full(data_s[..., 2], data_s[..., 3], '#6D6CFF', 'IOU > 0.25 ', ':', 1)
+        draw_full(data_s[..., 5], data_s[..., 6], '#0000FF', 'IOU > 0.10 ', '-', 1)
 
     axes = plt.gca()
     axes.set_aspect('auto')
