@@ -1,7 +1,7 @@
 data/
 result/
 results/
-gt/
+visualization/
 history/
 !src/data/
 src/test/*
