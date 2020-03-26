@@ -6,6 +6,7 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+from apex import amp
 from models.networks.hourglass import get_large_hourglass_net
 from models.loss import FocalLoss, RegL1Loss
 from data.abus_data import AbusNpyFormat
@@ -46,6 +47,8 @@ def train(args):
         init_ep = 0
     end_ep = args.max_epoch
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    model.to(device)
+    model, optimizer = amp.initialize(model, optimizer, opt_level="O2")
 
     print('Preparation done.')
     print('******************')
@@ -69,7 +72,6 @@ def train(args):
                 data_img = data_img.cuda()
                 data_hm = data_hm.cuda()
                 data_wh = data_wh.cuda()
-                model.to(device)
             optimizer.zero_grad()
             output = model(data_img)
             wh_pred = torch.abs(output[-1]['wh'])
@@ -78,7 +80,8 @@ def train(args):
 
             total_loss = hm_loss + lambda_s*wh_loss
             train_loss += total_loss.item()
-            total_loss.backward()
+            with amp.scale_loss(total_loss, optimizer) as scaled_loss:
+                scaled_loss.backward()
 
             optimizer.step()
             
@@ -93,7 +96,6 @@ def train(args):
                     data_img = data_img.cuda()
                     data_hm = data_hm.cuda()
                     data_wh = data_wh.cuda()
-                    model.to(device)
                 output = model(data_img)
                 wh_pred = torch.abs(output[-1]['wh'])
                 hm_loss = crit_hm(output[-1]['hm'], data_hm)
