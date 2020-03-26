@@ -48,6 +48,7 @@ class AbusNpyFormat(data.Dataset):
         line = self.gt[index]
         line = line.split(',', 4)
 
+        # Only for L, W, H regression
         size = (640,160,640)
         gt_scale = (size[0]/int(line[1]),size[1]/int(line[2]),size[2]/int(line[3]))
 

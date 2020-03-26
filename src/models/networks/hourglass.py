@@ -91,7 +91,7 @@ def make_kp_layer(cnv_dim, curr_dim, out_dim):
 
 def make_hm_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
-        convolution(3, cnv_dim, curr_dim, with_gn=False),
+        convolution(3, cnv_dim, curr_dim, with_gn=True),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1)),
         nn.Sigmoid()
     )
@@ -188,8 +188,8 @@ class exkp(BasicModule):
         curr_dim = dims[0]
 
         self.pre = nn.Sequential(
-            convolution(7, 1, 8, stride=2),
-            residual(3, 8, 32, stride=2)
+            convolution(7, 1, 16, stride=2),
+            residual(3, 16, 32, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
@@ -216,13 +216,13 @@ class exkp(BasicModule):
         self.inters_ = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(curr_dim, curr_dim, (1, 1, 1), bias=False),
-                nn.GroupNorm(8, out_dim)
+                nn.GroupNorm(8, curr_dim)
             ) for _ in range(nstack - 1)
         ])
         self.cnvs_   = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(cnv_dim, curr_dim, (1, 1, 1), bias=False),
-                nn.GroupNorm(8, out_dim)
+                nn.GroupNorm(8, curr_dim)
             ) for _ in range(nstack - 1)
         ])
 
@@ -287,7 +287,7 @@ class HourglassNet(exkp):
         # How deep do you wanna go? (# of Connections between layers)
         n       = 2
         # Number of channel
-        dims    = [32, 64, 256]
+        dims    = [32, 64, 128]
         # Number of layers of convolution
         modules = [2, 2, 2]
 

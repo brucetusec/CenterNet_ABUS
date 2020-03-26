@@ -40,6 +40,9 @@ def main(args, root):
         img = img.convert(mode='RGB')
         draw = ImageDraw.Draw(img)
         for bx in boxes:
+            if bx['score'] < 0.1:
+                continue
+
             z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], bx['x_bot'], bx['x_top']
 
             if int(y_bot) <= i <= int(y_top):

@@ -14,7 +14,7 @@ def _get_dilated_range(coord, width, scale=1):
 def _get_topk_wipeoff(boxes, output, size, wh_pred, topk=10, scale=1):
     hmax = nms(output[-1]['hm'])
     topk_scores, topk_inds = torch.topk(hmax.view(-1), topk)
-    print('Top {} predicted score:'.format(topk), list(map(lambda score: round(score, 3), topk_scores.tolist())))
+    print('Top {}-{} predicted score:'.format(len(boxes)+1, len(boxes)+topk), list(map(lambda score: round(score, 3), topk_scores.tolist())))
     z = topk_inds/(size[1]*size[0])
     y = (topk_inds % (size[1]*size[0]))/size[2]
     x = ((topk_inds % (size[1]*size[0])) % size[2])
@@ -89,7 +89,7 @@ def main(args):
             boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=10)
 
             # Second round
-            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
 
             # Third round
             # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)

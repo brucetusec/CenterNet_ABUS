@@ -25,13 +25,24 @@ def gen_3d_heatmap(size, gt_boxes, scale=1, downscale=1):
     hm = np.zeros(size, dtype=np.float32)
 
     for bbox in gt_boxes:
-        half_width = (int(bbox['z_range']*downscale//scale), int(bbox['y_range']//scale), int(bbox['x_range']*downscale//scale))
+        full_width = (int(bbox['z_range']*downscale//scale), int(bbox['y_range']//scale), int(bbox['x_range']*downscale//scale))
         # min width must be at least 1
-        half_width = [w if w > 0 else 1 for w in half_width]
-        expand = map(lambda x: x+1 if x%2 == 0 else x, half_width)
-        half_width = tuple(expand)
-        gauss_3d = gaussian3D(half_width, sigma=2)
-        start_point = (int(bbox['z_bot']*downscale//scale), int(bbox['y_bot']//scale), int(bbox['x_bot']*downscale//scale))
+        full_width = [w if w > 0 else 1 for w in full_width]
+        expand = map(lambda x: x+1 if x%2 == 0 else x, full_width)
+        full_width = list(expand)
+        start_point = [int(bbox['z_bot']*downscale//scale), int(bbox['y_bot']//scale), int(bbox['x_bot']*downscale//scale)]
+
+        if full_width[0]<5:
+            full_width[0] = 5
+            start_point[0] = max(0, int(bbox['z_center']*downscale//scale) - 2)
+        if full_width[2]<5:
+            full_width[2] = 5
+            start_point[2] = max(0, int(bbox['x_center']*downscale//scale) - 2)
+        if full_width[1]<5:
+            full_width[1] = 5
+            start_point[1] = max(0, int(bbox['y_center']//scale) - 2)
+
+        gauss_3d = gaussian3D(full_width, sigma=2)
         layer = _embed_matrix(size, gauss_3d, start_point)
         hm = np.maximum(hm, layer)
 

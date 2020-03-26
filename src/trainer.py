@@ -29,6 +29,7 @@ def train(args):
         'train_loss':[],
         'valid_hm_loss':[],
         'valid_wh_loss':[],
+        'valid_total_loss':[],
         'per_epoch_time':[]
     }
 
@@ -54,6 +55,7 @@ def train(args):
     min_loss = 0
 
     for epoch in range(init_ep, end_ep):
+        train_loss = 0
         current_loss = 0
         valid_hm_loss = 0
         valid_wh_loss = 0
@@ -75,7 +77,7 @@ def train(args):
             wh_loss = crit_wh(wh_pred, data_wh)
 
             total_loss = hm_loss + lambda_s*wh_loss
-            current_loss += total_loss.item()
+            train_loss += total_loss.item()
             total_loss.backward()
 
             optimizer.step()
@@ -102,7 +104,8 @@ def train(args):
 
         valid_hm_loss = valid_hm_loss/validset.__len__()
         valid_wh_loss = valid_wh_loss/validset.__len__()
-        current_loss = current_loss/trainset.__len__()
+        train_loss = train_loss/trainset.__len__()
+        current_loss = valid_hm_loss + args.lambda_s*valid_wh_loss
 
         if epoch == 0 or current_loss < min_loss:
             min_loss = current_loss
@@ -114,13 +117,15 @@ def train(args):
         train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
         train_hist['valid_hm_loss'].append(valid_hm_loss)
         train_hist['valid_wh_loss'].append(valid_wh_loss)
-        train_hist['train_loss'].append(current_loss)
+        train_hist['valid_total_loss'].append(current_loss)
+        train_hist['train_loss'].append(train_loss)
         print("Epoch: [{:d}], valid_hm_loss: {:.3f}, valid_wh_loss: {:.3f}".format((epoch + 1), valid_hm_loss, valid_wh_loss))
         print('Epoch exec time: {} min'.format((time.time() - epoch_start_time)/60))
 
     print("Training finished.")
     print("Total time cost: {} min.".format((time.time() - start_time)/60))
-    plt.plot(train_hist['train_loss'], color='r')
+    plt.plot(train_hist['train_loss'], color='k')
+    plt.plot(train_hist['valid_total_loss'], color='r')
     plt.plot(train_hist['valid_hm_loss'], color='b')
     plt.plot(train_hist['valid_wh_loss'], color='g')
     plt.ylabel('Loss')
