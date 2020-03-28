@@ -86,7 +86,7 @@ def main(args):
             wh_pred = torch.abs(output[-1]['wh'])
             boxes = []
             # First round
-            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=10)
+            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=15)
 
             # Second round
             # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
