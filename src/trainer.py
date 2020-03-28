@@ -112,7 +112,7 @@ def train(args):
         if epoch == 0 or current_loss < min_loss:
             min_loss = current_loss
             model.save(str(epoch))
-        elif (epoch % 10) == 9:
+        elif (epoch % 5) == 4:
             model.save(str(epoch))
         model.save('latest')
 
