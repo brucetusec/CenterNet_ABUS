@@ -38,7 +38,7 @@ def train(args):
         'hm': 1,
         'wh': 3
     }
-    model = get_large_hourglass_net(heads, n_stacks=1)
+    model = get_large_hourglass_net(heads, n_stacks=2)
     if args.resume:
         init_ep = max(0, args.resume_ep)
         print('Resume training from the latest checkpoint.')
@@ -48,7 +48,7 @@ def train(args):
     end_ep = args.max_epoch
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     model.to(device)
-    model, optimizer = amp.initialize(model, optimizer, opt_level="O2")
+    model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
 
     print('Preparation done.')
     print('******************')
@@ -112,7 +112,7 @@ def train(args):
         if epoch == 0 or current_loss < min_loss:
             min_loss = current_loss
             model.save(str(epoch))
-        elif (epoch % 10) == 9:
+        elif (epoch % 5) == 4:
             model.save(str(epoch))
         model.save('latest')
 
@@ -138,7 +138,7 @@ def train(args):
 
 def _parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--crx_valid', type=int, default=4)
+    parser.add_argument('--crx_valid', type=int, default=0)
     parser.add_argument('--batch_size', type=int, default=2)
     parser.add_argument('--max_epoch', type=int, default=60)
     parser.add_argument('--lr', type=float, default=1e-5)

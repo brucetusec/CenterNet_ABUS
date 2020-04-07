@@ -24,7 +24,7 @@ def draw_slice(volume, dir, label=None):
         img.save(os.path.join(dir ,(str(i)+'.png')))
 
 def main(args):
-    all_data = AbusNpyFormat(root, crx_valid=False, crx_fold_num=4, augmentation=True)
+    all_data = AbusNpyFormat(root, crx_valid=False, crx_fold_num=4, augmentation=False)
     data, hm, box, label = all_data.__getitem__(args.index)
     print('Dataset size:', all_data.__len__())
     print('Shape of data:', data.size())
@@ -39,7 +39,7 @@ def main(args):
     draw_slice(box[0], tmp_dir)
 
     tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'vol')
-    draw_slice(data[0], tmp_dir, label=label)
+    draw_slice(data[0], tmp_dir, label=label[0])
 
     return
 
