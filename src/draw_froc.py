@@ -161,11 +161,7 @@ def main(args):
         sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
         precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
 
-        # pred_num = np.array(pred_num)
-        # pred_small_num = np.array(pred_small_num)
-        # print('Small/All tumors: {}/{}'.format(pred_small_num.sum(), pred_num.sum()))
-
-        if sensitivity > 0.125:
+        if sensitivity_IOU_1 > 0.125:
             PERF_per_thre.append([
                 score_hit_thre,
                 total_pass,
@@ -176,7 +172,6 @@ def main(args):
                 precision_IOU_1,
                 sum_FP_IOU_1/total_pass])
 
-        if sensitivity_s > 0.125:
             PERF_per_thre_s.append([
                 score_hit_thre,
                 total_pass,
@@ -213,9 +208,12 @@ def main(args):
     axes = plt.gca()
     axes.axis([0, 10, 0, 1])
     axes.set_aspect('auto')
-    y_tick = np.arange(0, 1.1, 0.125)
+    x_tick = np.arange(0, 10, 1)
+    y_tick = np.arange(0, 1, 0.125)
+    plt.xticks(x_tick)
     plt.yticks(y_tick)
     plt.legend(loc='lower right')
+    plt.grid(b=True, which='major', axis='x')
     plt.ylabel('Sensitivity')
     plt.xlabel('False Positive Per Pass')
     plt.savefig('froc_test.png')

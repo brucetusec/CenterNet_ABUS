@@ -163,11 +163,7 @@ def main(args):
         sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
         precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
 
-        # pred_num = np.array(pred_num)
-        # pred_small_num = np.array(pred_small_num)
-        # print('Small/All tumors: {}/{}'.format(pred_small_num.sum(), pred_num.sum()))
-
-        if sensitivity > 0.125:
+        if sensitivity_IOU_1 > 0.125:
             PERF_per_thre.append([
                 score_hit_thre,
                 total_pass,
@@ -178,7 +174,6 @@ def main(args):
                 precision_IOU_1,
                 sum_FP_IOU_1/total_pass])
 
-        if sensitivity_s > 0.125:
             PERF_per_thre_s.append([
                 score_hit_thre,
                 total_pass,
@@ -189,11 +184,14 @@ def main(args):
                 precision_IOU_1_s,
                 sum_FP_IOU_1_s/total_pass])
 
+        print('Threshold:{:.3f}'.format(score_hit_thre))
+        print('Criteria: IoU > 0.1 Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity_IOU_1, precision_IOU_1, sum_FP_IOU_1/total_pass))
+        print('Criteria: IoU > 0.25 Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity, precision, sum_FP/total_pass))
+        print('\n')
+
     print('Small/All tumors: {}/{}'.format(true_small_num, true_num))
 
     data = np.array(PERF_per_thre)
-    data_s = np.array(PERF_per_thre_s)
-    # np.save(data_save_to,performnace_per_thre)
 
     font = {'family': 'Times New Roman',
             'size': 9}
@@ -206,20 +204,15 @@ def main(args):
         draw_full(data[..., 2], data[..., 3], '#FF6D6C', 'IOU > 0.25 ', ':', 1)
         draw_full(data[..., 5], data[..., 6], '#FF0000', 'IOU > 0.10 ', '-', 1)
 
-    if len(data_s) == 0:
-        print('Inference result for small is empty.')
-    else:
-        draw_full(data_s[..., 2], data_s[..., 3], '#6D6CFF', 'IOU > 0.25 ', ':', 1)
-        draw_full(data_s[..., 5], data_s[..., 6], '#0000FF', 'IOU > 0.10 ', '-', 1)
-
     axes = plt.gca()
     axes.set_aspect('auto')
     axes.set_xlim(0.125, 1.0)
-    x_tick = np.arange(0, 1, 0.125)
+    x_tick = np.arange(0, 1, 0.1)
     plt.xticks(x_tick)
     axes.set_ylim(0.125, 1.01)
     y_tick = np.arange(0, 1, 0.125)
     plt.yticks(y_tick)
+    plt.grid(b=True, which='major', axis='x')
     plt.legend(loc='lower left')
     plt.ylabel('Precision')
     plt.xlabel('Sensitivity')
