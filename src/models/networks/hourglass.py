@@ -27,7 +27,7 @@ class convolution(nn.Module):
 
 class asym_convolution(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
-        super(convolution, self).__init__()
+        super(asym_convolution, self).__init__()
 
         pad = (k - 1) // 2
         self.conv = nn.Conv3d(inp_dim, out_dim, (k, k-2, k), padding=(pad, pad-1, pad), stride=(stride, stride, stride), bias=not with_gn)
