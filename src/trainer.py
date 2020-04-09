@@ -38,7 +38,7 @@ def train(args):
         'hm': 1,
         'wh': 3
     }
-    model = get_large_hourglass_net(heads, n_stacks=2)
+    model = get_large_hourglass_net(heads, n_stacks=1)
     if args.resume:
         init_ep = max(0, args.resume_ep)
         print('Resume training from the latest checkpoint.')
