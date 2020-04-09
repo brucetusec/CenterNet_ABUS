@@ -25,6 +25,21 @@ class convolution(nn.Module):
         relu = self.relu(bn)
         return relu
 
+class asym_convolution(nn.Module):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
+        super(convolution, self).__init__()
+
+        pad = (k - 1) // 2
+        self.conv = nn.Conv3d(inp_dim, out_dim, (k, k-2, k), padding=(pad, pad-1, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.bn   = nn.GroupNorm(8, out_dim) if with_gn else nn.Sequential()
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        conv = self.conv(x)
+        bn   = self.bn(conv)
+        relu = self.relu(bn)
+        return relu
+
 class residual(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
         super(residual, self).__init__()
@@ -188,7 +203,7 @@ class exkp(BasicModule):
         curr_dim = dims[0]
 
         self.pre = nn.Sequential(
-            convolution(7, 1, 16, stride=2),
+            asym_convolution(5, 1, 16, stride=2),
             residual(3, 16, 16, stride=2)
         ) if pre is None else pre
 
