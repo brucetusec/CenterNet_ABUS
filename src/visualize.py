@@ -81,10 +81,10 @@ def main(args, root):
                             [(z_bot,x_bot),(z_top,x_top)],
                             outline ="red", width=2)
                 
-                draw.rectangle((0, 10, 30, 20), fill='blue')
-                draw.text((1,10), 'Pred', fill="white")
-                draw.rectangle((0, 22, 30, 32), fill='red')
-                draw.text((1,22), 'GT', fill="white")
+                draw.rectangle((0, 2, 30, 12), fill='blue')
+                draw.text((2,0), 'Pred', fill="white")
+                draw.rectangle((0, 14, 30, 24), fill='red')
+                draw.text((2,14), 'GT', fill="white")
 
                 img.save(os.path.join(img_dir, (str(i)+'.png')))
 
@@ -110,10 +110,10 @@ def main(args, root):
                             [(z_bot,y_bot),(z_top,y_top)],
                             outline ="red", width=2)
 
-                draw.rectangle((0, 10, 30, 20), fill='blue')
-                draw.text((1,10), 'Pred', fill="white")
-                draw.rectangle((0, 22, 30, 32), fill='red')
-                draw.text((1,22), 'GT', fill="white")
+                draw.rectangle((0, 2, 30, 12), fill='blue')
+                draw.text((2,0), 'Pred', fill="white")
+                draw.rectangle((0, 14, 30, 24), fill='red')
+                draw.text((2,14), 'GT', fill="white")
 
                 img.save(os.path.join(img_dir, (str(i)+'.png')))
         
@@ -124,7 +124,7 @@ def main(args, root):
                 img = img.rotate(angle=-90, expand=True)
                 draw = ImageDraw.Draw(img)
                 for bx in boxes:
-                    if bx['score'] < 0.1:
+                    if bx['score'] < 0.01:
                         continue
 
                     z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], 640-bx['x_bot'], 640-bx['x_top']
@@ -140,10 +140,10 @@ def main(args, root):
                             [(x_bot,y_bot),(x_top,y_top)],
                             outline ="red", width=2)
 
-                draw.rectangle((0, 10, 30, 20), fill='blue')
-                draw.text((1,10), 'Pred', fill="white")
-                draw.rectangle((0, 22, 30, 32), fill='red')
-                draw.text((1,22), 'GT', fill="white")
+                draw.rectangle((0, 2, 30, 12), fill='blue')
+                draw.text((2,0), 'Pred', fill="white")
+                draw.rectangle((0, 14, 30, 24), fill='red')
+                draw.text((2,14), 'GT', fill="white")
 
                 img.save(os.path.join(img_dir, (str(i)+'.png')))
     
