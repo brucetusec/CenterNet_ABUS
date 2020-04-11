@@ -174,15 +174,16 @@ def main(args):
                 precision_IOU_1,
                 sum_FP_IOU_1/total_pass])
 
-            PERF_per_thre_s.append([
-                score_hit_thre,
-                total_pass,
-                sensitivity_s,
-                precision_s,
-                sum_FP_s/total_pass,
-                sensitivity_IOU_1_s,
-                precision_IOU_1_s,
-                sum_FP_IOU_1_s/total_pass])
+        # if sensitivity_IOU_1_s > 0.125
+        #     PERF_per_thre_s.append([
+        #         score_hit_thre,
+        #         total_pass,
+        #         sensitivity_s,
+        #         precision_s,
+        #         sum_FP_s/total_pass,
+        #         sensitivity_IOU_1_s,
+        #         precision_IOU_1_s,
+        #         sum_FP_IOU_1_s/total_pass])
 
         print('Threshold:{:.3f}'.format(score_hit_thre))
         print('Criteria: IoU > 0.1 Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity_IOU_1, precision_IOU_1, sum_FP_IOU_1/total_pass))
@@ -192,6 +193,7 @@ def main(args):
     print('Small/All tumors: {}/{}'.format(true_small_num, true_num))
 
     data = np.array(PERF_per_thre)
+    # data_s = np.array(PERF_per_thre_s)
 
     font = {'family': 'Times New Roman',
             'size': 9}
@@ -203,6 +205,12 @@ def main(args):
     else:
         draw_full(data[..., 2], data[..., 3], '#FF6D6C', 'IOU > 0.25 ', ':', 1)
         draw_full(data[..., 5], data[..., 6], '#FF0000', 'IOU > 0.10 ', '-', 1)
+
+    # if len(data_s) == 0:
+    #    print('Inference result for small is empty.')
+    # else:
+    #    draw_full(data_s[..., 2], data_s[..., 3], '#6D6CFF', 'IOU > 0.25 ', ':', 1)
+    #    draw_full(data_s[..., 5], data_s[..., 6], '#0000FF', 'IOU > 0.10 ', '-', 1)
 
     axes = plt.gca()
     axes.set_aspect('auto')
