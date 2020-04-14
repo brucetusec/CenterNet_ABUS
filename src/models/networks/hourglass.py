@@ -45,11 +45,13 @@ class residual(nn.Module):
         super(residual, self).__init__()
 
         pad = (k - 1) // 2
+        if dilation is 2:
+            pad += 1
         self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn, dilation=dilation)
         self.bn1   = nn.GroupNorm(8, out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
-        self.conv2 = nn.Conv3d(out_dim, out_dim, (3, 3, 3), padding=(1, 1, 1), bias=False, dilation=dilation)
+        self.conv2 = nn.Conv3d(out_dim, out_dim, (k, k, k), padding=(pad, pad, pad), bias=False, dilation=dilation)
         self.bn2   = nn.GroupNorm(8, out_dim)
         
         self.skip  = nn.Sequential(
