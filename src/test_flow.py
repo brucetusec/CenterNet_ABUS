@@ -15,7 +15,7 @@ def main(args):
     model = get_large_hourglass_net(heads, n_stacks=1, debug=True)
     model = model.to(device)
 
-    trainset = AbusNpyFormat(root=root, downsample=0.5)
+    trainset = AbusNpyFormat(root=root, downsample=1)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     for batch_idx, (data_img, hm_gt, box_gt, _) in enumerate(trainset_loader):
         data_img = data_img.to(device)
