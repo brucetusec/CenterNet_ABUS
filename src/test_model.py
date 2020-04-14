@@ -9,7 +9,7 @@ def main():
         'hm': 1,
         'wh': 3
     }
-    model = get_large_hourglass_net(heads, n_stacks=2)
+    model = get_large_hourglass_net(heads, n_stacks=1)
     print(model)
     model.to(device)
     mem_cost = torch.cuda.memory_allocated()

@@ -11,11 +11,11 @@ import torch.nn as nn
 from .basic import BasicModule
 
 class convolution(nn.Module):
-    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True, dilation=1):
         super(convolution, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.conv = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn, dilation=dilation)
         self.bn   = nn.GroupNorm(8, out_dim) if with_gn else nn.Sequential()
         self.relu = nn.ReLU(inplace=True)
 
@@ -41,15 +41,15 @@ class asym_convolution(nn.Module):
         return relu
 
 class residual(nn.Module):
-    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True, dilation=1):
         super(residual, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn, dilation=dilation)
         self.bn1   = nn.GroupNorm(8, out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
-        self.conv2 = nn.Conv3d(out_dim, out_dim, (3, 3, 3), padding=(1, 1, 1), bias=False)
+        self.conv2 = nn.Conv3d(out_dim, out_dim, (3, 3, 3), padding=(1, 1, 1), bias=False, dilation=dilation)
         self.bn2   = nn.GroupNorm(8, out_dim)
         
         self.skip  = nn.Sequential(
@@ -106,7 +106,7 @@ def make_kp_layer(cnv_dim, curr_dim, out_dim):
 
 def make_hg_layer(kernel, dim0, dim1, mod, layer=convolution, **kwargs):
     layers  = [layer(kernel, dim0, dim1, stride=2)]
-    layers += [layer(kernel, dim1, dim1) for _ in range(mod - 1)]
+    layers += [layer(kernel, dim1, dim1, **kwargs) for _ in range(mod - 1)]
     return nn.Sequential(*layers)
 
 def make_hm_layer(cnv_dim, curr_dim, out_dim):
@@ -143,14 +143,19 @@ class kp_module(nn.Module):
         curr_dim = dims[0]
         next_dim = dims[1]
 
+        if self.n > 1:
+            dilation = 1
+        else:
+            dilation = 2
+            
         self.up1  = make_up_layer(
             3, curr_dim, curr_dim, curr_mod, 
-            layer=layer, **kwargs
+            layer=layer, **kwargs, dilation=dilation
         )  
         self.max1 = make_pool_layer(curr_dim)
         self.low1 = make_hg_layer(
             3, curr_dim, next_dim, curr_mod,
-            layer=layer, **kwargs
+            layer=layer, **kwargs, dilation=dilation
         )
         if self.n > 1:
             self.low2 = kp_module(
@@ -168,7 +173,7 @@ class kp_module(nn.Module):
         else:
             self.low2 = make_low_layer(
                 3, next_dim, next_dim, next_mod,
-                layer=layer, **kwargs
+                layer=layer, **kwargs, dilation=dilation
             )
         self.low3 = make_hg_layer_revr(
             3, next_dim, curr_dim, curr_mod,
@@ -303,7 +308,7 @@ class HourglassNet(exkp):
         # Number of channel
         dims    = [16, 32, 64]
         # Number of layers of convolution
-        modules = [2, 1, 1]
+        modules = [2, 2, 2]
 
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
