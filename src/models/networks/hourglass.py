@@ -28,9 +28,9 @@ class convolution(nn.Module):
 class asym_convolution(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
         super(asym_convolution, self).__init__()
-
+        # 5,3,5 -> dilation: 9,5,9 -> pad: 4,2,4
         pad = (k - 1) // 2
-        self.conv = nn.Conv3d(inp_dim, out_dim, (k, k-2, k), padding=(pad, pad-1, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.conv = nn.Conv3d(inp_dim, out_dim, (k, k-2, k), padding=(pad+2, pad, pad+2), stride=(1, 1, 1), bias=not with_gn, dilation=2)
         self.bn   = nn.GroupNorm(8, out_dim) if with_gn else nn.Sequential()
         self.relu = nn.ReLU(inplace=True)
 
@@ -39,6 +39,29 @@ class asym_convolution(nn.Module):
         bn   = self.bn(conv)
         relu = self.relu(bn)
         return relu
+
+class asym_residual(nn.Module):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
+        super(asym_residual, self).__init__()
+
+        self.conv1 = asym_convolution(k, inp_dim, out_dim, stride=1)
+
+        self.conv2 = nn.Conv3d(out_dim, out_dim, (3, 3, 3), padding=(1, 1, 1), stride=(stride, stride, stride), bias=False)
+        self.bn2   = nn.GroupNorm(8, out_dim)
+        
+        self.skip  = nn.Sequential(
+            nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
+            nn.GroupNorm(8, out_dim)
+        ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
+        self.relu  = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        conv1 = self.conv1(x)
+        conv2 = self.conv2(conv1)
+        bn2   = self.bn2(conv2)
+
+        skip  = self.skip(x)
+        return self.relu(bn2 + skip)
 
 class residual(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True, dilation=1):
@@ -144,20 +167,15 @@ class kp_module(nn.Module):
 
         curr_dim = dims[0]
         next_dim = dims[1]
-
-        if self.n > 1:
-            dilation = 1
-        else:
-            dilation = 2
             
         self.up1  = make_up_layer(
-            3, curr_dim, curr_dim, curr_mod, 
-            layer=layer, **kwargs, dilation=dilation
+            3, curr_dim, curr_dim, 1, 
+            layer=layer, **kwargs
         )  
         self.max1 = make_pool_layer(curr_dim)
         self.low1 = make_hg_layer(
             3, curr_dim, next_dim, curr_mod,
-            layer=layer, **kwargs, dilation=dilation
+            layer=layer, **kwargs
         )
         if self.n > 1:
             self.low2 = kp_module(
@@ -174,11 +192,11 @@ class kp_module(nn.Module):
             )
         else:
             self.low2 = make_low_layer(
-                3, next_dim, next_dim, next_mod,
-                layer=layer, **kwargs, dilation=dilation
+                3, next_dim, next_dim, 1,
+                layer=layer, **kwargs
             )
         self.low3 = make_hg_layer_revr(
-            3, next_dim, curr_dim, curr_mod,
+            3, next_dim, curr_dim, 1,
             layer=layer, **kwargs
         )
         self.up2  = make_unpool_layer(curr_dim)
@@ -215,7 +233,7 @@ class exkp(BasicModule):
         curr_dim = dims[0]
 
         self.pre = nn.Sequential(
-            asym_convolution(5, 1, 16, stride=2),
+            asym_residual(5, 1, 16, stride=2),
             residual(3, 16, 16, stride=2)
         ) if pre is None else pre
 
