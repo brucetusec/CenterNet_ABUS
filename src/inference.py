@@ -7,11 +7,12 @@ from data.abus_data import AbusNpyFormat
 from utils.postprocess import nms 
 from models.networks.hourglass import get_large_hourglass_net
 
-def _get_dilated_range(coord, width, scale=1):
-    center = (4*coord + 2) / scale
+def _get_dilated_range(coord, width, scale=1, dilation=4):
+    center = (dilation*coord + 2) / scale
     return (center - width//2), (center + width//2)
 
 def _get_topk_wipeoff(boxes, output, size, wh_pred, topk=10, scale=1):
+    dilation = (640/size[0], 160/size[1], 640/size[2])
     hmax = nms(output[-1]['hm'])
     topk_scores, topk_inds = torch.topk(hmax.view(-1), topk)
     print('Top {}-{} predicted score:'.format(len(boxes)+1, len(boxes)+topk), list(map(lambda score: round(score, 3), topk_scores.tolist())))
@@ -25,9 +26,9 @@ def _get_topk_wipeoff(boxes, output, size, wh_pred, topk=10, scale=1):
         w1 = wh_pred[0,1,z[i],y[i],x[i]].to(torch.uint8).item()
         w2 = wh_pred[0,2,z[i],y[i],x[i]].to(torch.uint8).item()
 
-        z_bot, z_top = _get_dilated_range(z[i], w0, scale=args.scale)
-        y_bot, y_top = _get_dilated_range(y[i], w1)
-        x_bot, x_top = _get_dilated_range(x[i], w2, scale=args.scale)
+        z_bot, z_top = _get_dilated_range(z[i], w0, scale=args.scale, dilation=dilation[0])
+        y_bot, y_top = _get_dilated_range(y[i], w1, dilation=dilation[1])
+        x_bot, x_top = _get_dilated_range(x[i], w2, scale=args.scale, dilation=dilation[2])
         boxes.append([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
         # Too lazy to refactor
         output[-1]['hm'][0,0,z[i],y[i],x[i]] = 0
@@ -61,7 +62,7 @@ def _get_topk_wipeoff(boxes, output, size, wh_pred, topk=10, scale=1):
     return boxes
 
 def main(args):
-    size = (int(160*args.scale), 40, int(160*args.scale))
+    size = (int(160*args.scale), 80, int(160*args.scale))
  
     heads = {
         'hm': 1, # 1 channel Probability heat map.

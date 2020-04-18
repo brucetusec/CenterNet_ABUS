@@ -67,15 +67,15 @@ class AbusNpyFormat(data.Dataset):
             if box['z_bot'] <= 0 or box['x_bot'] <= 0:
                 print(box)
 
-        scale = 4
+        scale = (4,2,4)
 
         hm = gen_3d_heatmap(self.img_size, boxes, scale, downscale=self.downsample)
-        hm = torch.from_numpy(hm).view(1, self.img_size[0]//scale, self.img_size[1]//scale, self.img_size[2]//scale).to(torch.float32)
+        hm = torch.from_numpy(hm).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
 
         wh_x, wh_y, wh_z = gen_3d_hw(self.img_size, boxes, scale, downscale=self.downsample)
-        wh_x = torch.from_numpy(wh_x).view(1, self.img_size[0]//scale, self.img_size[1]//scale, self.img_size[2]//scale).to(torch.float32)
-        wh_y = torch.from_numpy(wh_y).view(1, self.img_size[0]//scale, self.img_size[1]//scale, self.img_size[2]//scale).to(torch.float32)
-        wh_z = torch.from_numpy(wh_z).view(1, self.img_size[0]//scale, self.img_size[1]//scale, self.img_size[2]//scale).to(torch.float32)
+        wh_x = torch.from_numpy(wh_x).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
+        wh_y = torch.from_numpy(wh_y).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
+        wh_z = torch.from_numpy(wh_z).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
 
         return data, hm, torch.cat((wh_z, wh_y, wh_x), dim=0), [boxes,index]
 
