@@ -105,7 +105,7 @@ class residual_2D(nn.Module):
         super(residual_2D, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, 1, k), padding=(pad, 0, pad), stride=(stride, 1, stride), bias=not with_gn)
+        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
         self.bn1   = nn.GroupNorm(8, out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
@@ -113,7 +113,7 @@ class residual_2D(nn.Module):
         self.bn2   = nn.GroupNorm(8, out_dim)
         
         self.skip  = nn.Sequential(
-            nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, 1, stride), bias=False),
+            nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
             nn.GroupNorm(8, out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
         self.relu  = nn.ReLU(inplace=True)
@@ -146,8 +146,12 @@ class MergeUp(nn.Module):
     def forward(self, up1, up2):
         return up1 + up2
 
+class MergeCat(nn.Module):
+    def forward(self, up1, up2):
+        return torch.cat((up1, up2), 1)
+
 def make_merge_layer(dim):
-    return MergeUp()
+    return MergeCat()
 
 # def make_pool_layer(dim):
 #     return nn.MaxPool2d(kernel_size=2, stride=2)
@@ -205,12 +209,12 @@ class kp_module(nn.Module):
             
         self.up1  = make_up_layer(
             3, curr_dim, curr_dim, 1, 
-            layer=layer, **kwargs
+            layer=residual_2D, **kwargs
         )  
         self.max1 = make_pool_layer(curr_dim)
         self.low1 = make_hg_layer(
             3, curr_dim, next_dim, curr_mod,
-            layer=layer, **kwargs
+            layer=residual_2D, **kwargs
         )
         if self.n > 1:
             self.low2 = kp_module(
@@ -225,15 +229,20 @@ class kp_module(nn.Module):
                 debug=debug,
                 **kwargs
             )
+            self.low3 = make_hg_layer_revr(
+                3, next_dim*2, curr_dim, 1,
+                layer=layer, **kwargs
+            )
         else:
             self.low2 = make_low_layer(
                 3, next_dim, next_dim, 1,
                 layer=layer, **kwargs
             )
-        self.low3 = make_hg_layer_revr(
-            3, next_dim, curr_dim, 1,
-            layer=layer, **kwargs
-        )
+            self.low3 = make_hg_layer_revr(
+                3, next_dim, curr_dim, 1,
+                layer=layer, **kwargs
+            )
+
         self.up2  = make_unpool_layer(curr_dim)
 
         self.merge = make_merge_layer(curr_dim)
@@ -268,8 +277,8 @@ class exkp(BasicModule):
         curr_dim = dims[0]
 
         self.pre = nn.Sequential(
-            asym_convolution(5, 1, 16, stride=2),
-            residual_2D(3, 16, 16, stride=2)
+            asym_convolution(5, 1, 8, stride=2),
+            residual_2D(3, 8, 32, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
@@ -286,7 +295,7 @@ class exkp(BasicModule):
             ) for _ in range(nstack)
         ])
         self.cnvs = nn.ModuleList([
-            make_cnv_layer(curr_dim, cnv_dim) for _ in range(nstack)
+            make_cnv_layer(curr_dim*2, cnv_dim) for _ in range(nstack)
         ])
 
         self.inters = nn.ModuleList([
@@ -361,9 +370,9 @@ class HourglassNet(exkp):
         # How deep do you wanna go? (# of Connections between layers)
         n       = 2
         # Number of channel
-        dims    = [16, 32, 64]
+        dims    = [32, 64, 128]
         # Number of layers of convolution
-        modules = [2, 2, 2]
+        modules = [2, 2, 1]
 
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
