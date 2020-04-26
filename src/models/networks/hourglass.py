@@ -230,16 +230,16 @@ class kp_module(nn.Module):
                 **kwargs
             )
             self.low3 = make_hg_layer_revr(
-                3, next_dim*2, curr_dim, 1,
+                3, next_dim*2, curr_dim, curr_mod,
                 layer=layer, **kwargs
             )
         else:
             self.low2 = make_low_layer(
-                3, next_dim, next_dim, 1,
+                3, next_dim, next_dim, curr_mod,
                 layer=layer, **kwargs
             )
             self.low3 = make_hg_layer_revr(
-                3, next_dim, curr_dim, 1,
+                3, next_dim, curr_dim, curr_mod,
                 layer=layer, **kwargs
             )
 
