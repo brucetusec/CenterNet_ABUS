@@ -30,7 +30,7 @@ class asym_convolution(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_norm=True):
         super(asym_convolution, self).__init__()
         pad = (k - 1) // 2
-        self.conv = nn.Conv3d(inp_dim, out_dim, (k, 3, k), padding=(pad, 1, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.conv = nn.Conv3d(inp_dim, out_dim, (k, 3, k), padding=(pad, 1, pad), stride=(stride, stride, stride), bias=not with_norm)
         self.bn   = CBatchNorm2d(out_dim) if with_norm else nn.Sequential()
         self.relu = nn.ReLU(inplace=True)
 
