@@ -32,32 +32,32 @@ def _get_topk_wipeoff(boxes, output, size, wh_pred, topk=10, scale=1):
         boxes.append([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
         # Too lazy to refactor
         output[-1]['hm'][0,0,z[i],y[i],x[i]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],x[i]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i],x[i]] = 0
-        # output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],x[i]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],x[i]] = 0
-        # output[-1]['hm'][0,0,z[i],y[i]-1,x[i]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,x[i]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i]-1,x[i]] = 0
-        # output[-1]['hm'][0,0,z[i],y[i],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i],y[i]-1,(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i]-1,(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i],y[i],x[i]-1] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],x[i]-1] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i],x[i]-1] = 0
-        # output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],x[i]-1] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]-1] = 0
-        # output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],x[i]-1] = 0
-        # output[-1]['hm'][0,0,z[i],y[i]-1,x[i]-1] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,x[i]-1] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i]-1,x[i]-1] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],x[i]] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i],x[i]] = 0
+        output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],x[i]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]] = 0
+        output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],x[i]] = 0
+        output[-1]['hm'][0,0,z[i],y[i]-1,x[i]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,x[i]] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i]-1,x[i]] = 0
+        output[-1]['hm'][0,0,z[i],y[i],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i],y[i]-1,(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i]-1,(x[i]+1)%size[2]] = 0
+        output[-1]['hm'][0,0,z[i],y[i],x[i]-1] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],x[i]-1] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i],x[i]-1] = 0
+        output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],x[i]-1] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]-1] = 0
+        output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],x[i]-1] = 0
+        output[-1]['hm'][0,0,z[i],y[i]-1,x[i]-1] = 0
+        output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,x[i]-1] = 0
+        output[-1]['hm'][0,0,z[i]-1,y[i]-1,x[i]-1] = 0
     
     return boxes
 
@@ -90,7 +90,7 @@ def main(args):
             boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=15)
 
             # Second round
-            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
 
             # Third round
             # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)

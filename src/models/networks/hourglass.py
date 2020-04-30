@@ -9,14 +9,15 @@ import numpy as np
 import torch
 import torch.nn as nn
 from .basic import BasicModule
+from .normalize import CBatchNorm2d
 
 class convolution(nn.Module):
-    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True, dilation=1):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_norm=True, dilation=1):
         super(convolution, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn, dilation=dilation)
-        self.bn   = nn.GroupNorm(8, out_dim) if with_gn else nn.Sequential()
+        self.conv = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_norm, dilation=dilation)
+        self.bn   = CBatchNorm2d(out_dim) if with_norm else nn.Sequential()
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -26,11 +27,11 @@ class convolution(nn.Module):
         return relu
 
 class asym_convolution(nn.Module):
-    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_norm=True):
         super(asym_convolution, self).__init__()
         pad = (k - 1) // 2
         self.conv = nn.Conv3d(inp_dim, out_dim, (k, 3, k), padding=(pad, 1, pad), stride=(stride, stride, stride), bias=not with_gn)
-        self.bn   = nn.GroupNorm(8, out_dim) if with_gn else nn.Sequential()
+        self.bn   = CBatchNorm2d(out_dim) if with_norm else nn.Sequential()
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -40,20 +41,20 @@ class asym_convolution(nn.Module):
         return relu
 
 class residual(nn.Module):
-    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_norm=True):
         super(residual, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
-        self.bn1   = nn.GroupNorm(8, out_dim)
+        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_norm)
+        self.bn1   = CBatchNorm2d(out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
         self.conv2 = nn.Conv3d(out_dim, out_dim, (k, k, k), padding=(pad, pad, pad), bias=False)
-        self.bn2   = nn.GroupNorm(8, out_dim)
+        self.bn2   = CBatchNorm2d(out_dim)
         
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
-            nn.GroupNorm(8, out_dim)
+            CBatchNorm2d(out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
         self.relu  = nn.ReLU(inplace=True)
 
@@ -69,22 +70,22 @@ class residual(nn.Module):
         return self.relu(bn2 + skip)
 
 class dilated_residual(nn.Module):
-    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True, dilation=1):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_norm=True, dilation=1):
         super(dilated_residual, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
-        self.bn1   = nn.GroupNorm(8, out_dim)
+        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_norm)
+        self.bn1   = CBatchNorm2d(out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
         if dilation is 2:
             pad += 1
         self.conv2 = nn.Conv3d(out_dim, out_dim, (k, k, k), padding=(pad, pad, pad), bias=False, dilation=dilation)
-        self.bn2   = nn.GroupNorm(8, out_dim)
+        self.bn2   = CBatchNorm2d(out_dim)
         
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
-            nn.GroupNorm(8, out_dim)
+            CBatchNorm2d(out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
         self.relu  = nn.ReLU(inplace=True)
 
@@ -100,20 +101,20 @@ class dilated_residual(nn.Module):
         return self.relu(bn2 + skip)
 
 class residual_2D(nn.Module):
-    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_norm=True):
         super(residual_2D, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
-        self.bn1   = nn.GroupNorm(8, out_dim)
+        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_norm)
+        self.bn1   = CBatchNorm2d(out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
         self.conv2 = nn.Conv3d(out_dim, out_dim, (k, 1, k), padding=(pad, 0, pad), bias=False)
-        self.bn2   = nn.GroupNorm(8, out_dim)
+        self.bn2   = CBatchNorm2d(out_dim)
         
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
-            nn.GroupNorm(8, out_dim)
+            CBatchNorm2d(out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
         self.relu  = nn.ReLU(inplace=True)
 
@@ -163,7 +164,7 @@ def make_unpool_layer(dim):
 
 def make_kp_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
-        convolution(3, cnv_dim, curr_dim, with_gn=True),
+        convolution(3, cnv_dim, curr_dim, with_norm=True),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1))
     )
 
@@ -174,7 +175,7 @@ def make_hg_layer(kernel, dim0, dim1, mod, layer=convolution, **kwargs):
 
 def make_hm_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
-        convolution(3, cnv_dim, curr_dim, with_gn=True),
+        convolution(3, cnv_dim, curr_dim, with_norm=True),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1)),
         nn.Sigmoid()
     )
@@ -304,13 +305,13 @@ class exkp(BasicModule):
         self.inters_ = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(curr_dim, curr_dim, (1, 1, 1), bias=False),
-                nn.GroupNorm(8, curr_dim)
+                CBatchNorm2d(curr_dim)
             ) for _ in range(nstack - 1)
         ])
         self.cnvs_   = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(cnv_dim, curr_dim, (1, 1, 1), bias=False),
-                nn.GroupNorm(8, curr_dim)
+                CBatchNorm2d(curr_dim)
             ) for _ in range(nstack - 1)
         ])
 
