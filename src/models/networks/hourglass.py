@@ -22,7 +22,7 @@ class convolution(nn.Module):
 
     def forward(self, x):
         conv = self.conv(x)
-        bn   = self.bn(conv)
+        bn   = self.bn(conv, self.conv.weight)
         relu = self.relu(bn)
         return relu
 
@@ -36,7 +36,7 @@ class asym_convolution(nn.Module):
 
     def forward(self, x):
         conv = self.conv(x)
-        bn   = self.bn(conv)
+        bn   = self.bn(conv, self.conv.weight)
         relu = self.relu(bn)
         return relu
 
@@ -54,17 +54,17 @@ class residual(nn.Module):
         
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
-            CBatchNorm2d(out_dim)
+            nn.GroupNorm(8, out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
         self.relu  = nn.ReLU(inplace=True)
 
     def forward(self, x):
         conv1 = self.conv1(x)
-        bn1   = self.bn1(conv1)
+        bn1   = self.bn1(conv1, self.conv1.weight)
         relu1 = self.relu1(bn1)
 
         conv2 = self.conv2(relu1)
-        bn2   = self.bn2(conv2)
+        bn2   = self.bn2(conv2, self.conv2.weight)
 
         skip  = self.skip(x)
         return self.relu(bn2 + skip)
@@ -85,17 +85,17 @@ class dilated_residual(nn.Module):
         
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
-            CBatchNorm2d(out_dim)
+            nn.GroupNorm(8, out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
         self.relu  = nn.ReLU(inplace=True)
 
     def forward(self, x):
         conv1 = self.conv1(x)
-        bn1   = self.bn1(conv1)
+        bn1   = self.bn1(conv1, self.conv1.weight)
         relu1 = self.relu1(bn1)
 
         conv2 = self.conv2(relu1)
-        bn2   = self.bn2(conv2)
+        bn2   = self.bn2(conv2, self.conv2.weight)
 
         skip  = self.skip(x)
         return self.relu(bn2 + skip)
@@ -114,17 +114,17 @@ class residual_2D(nn.Module):
         
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
-            CBatchNorm2d(out_dim)
+            nn.GroupNorm(8, out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
         self.relu  = nn.ReLU(inplace=True)
 
     def forward(self, x):
         conv1 = self.conv1(x)
-        bn1   = self.bn1(conv1)
+        bn1   = self.bn1(conv1, self.conv1.weight)
         relu1 = self.relu1(bn1)
 
         conv2 = self.conv2(relu1)
-        bn2   = self.bn2(conv2)
+        bn2   = self.bn2(conv2, self.conv2.weight)
 
         skip  = self.skip(x)
         return self.relu(bn2 + skip)
@@ -305,13 +305,13 @@ class exkp(BasicModule):
         self.inters_ = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(curr_dim, curr_dim, (1, 1, 1), bias=False),
-                CBatchNorm2d(curr_dim)
+                nn.GroupNorm(8, curr_dim)
             ) for _ in range(nstack - 1)
         ])
         self.cnvs_   = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(cnv_dim, curr_dim, (1, 1, 1), bias=False),
-                CBatchNorm2d(curr_dim)
+                nn.GroupNorm(8, curr_dim)
             ) for _ in range(nstack - 1)
         ])
 
