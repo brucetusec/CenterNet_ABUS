@@ -28,9 +28,8 @@ class convolution(nn.Module):
 class asym_convolution(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
         super(asym_convolution, self).__init__()
-        # 5,3,5 -> dilation: 9,5,9 -> pad: 4,2,4
         pad = (k - 1) // 2
-        self.conv = nn.Conv3d(inp_dim, out_dim, (k, k-2, k), padding=(pad, pad-1, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.conv = nn.Conv3d(inp_dim, out_dim, (k, 3, k), padding=(pad, 1, pad), stride=(stride, stride, stride), bias=not with_gn)
         self.bn   = nn.GroupNorm(8, out_dim) if with_gn else nn.Sequential()
         self.relu = nn.ReLU(inplace=True)
 
@@ -208,7 +207,7 @@ class kp_module(nn.Module):
         next_dim = dims[1]
             
         self.up1  = make_up_layer(
-            3, curr_dim, curr_dim, 1, 
+            3, curr_dim, curr_dim, curr_mod, 
             layer=residual_2D, **kwargs
         )  
         self.max1 = make_pool_layer(curr_dim)
@@ -277,7 +276,7 @@ class exkp(BasicModule):
         curr_dim = dims[0]
 
         self.pre = nn.Sequential(
-            asym_convolution(5, 1, 8, stride=2),
+            asym_convolution(7, 1, 8, stride=2),
             residual_2D(3, 8, 32, stride=2)
         ) if pre is None else pre
 
