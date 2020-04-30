@@ -9,3 +9,4 @@ model_weights/
 */checkpoints/
 *pyc
 *_old.py
+*.png
