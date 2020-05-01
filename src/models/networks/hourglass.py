@@ -390,7 +390,7 @@ class HourglassNet(exkp):
         # Number of channel
         dims    = [32, 64, 128]
         # Number of layers of convolution
-        modules = [2, 2, 1]
+        modules = [2, 1, 1]
 
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
