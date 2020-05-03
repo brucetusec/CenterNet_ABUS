@@ -67,7 +67,7 @@ class AbusNpyFormat(data.Dataset):
             if box['z_bot'] <= 0 or box['x_bot'] <= 0:
                 print(box)
 
-        scale = (4,4,4)
+        scale = (4,2,4)
 
         hm = gen_3d_heatmap(self.img_size, boxes, scale, downscale=self.downsample)
         hm = torch.from_numpy(hm).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)

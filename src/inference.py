@@ -62,7 +62,7 @@ def _get_topk_wipeoff(boxes, output, size, wh_pred, topk=10, scale=1):
     return boxes
 
 def main(args):
-    size = (int(160*args.scale), 40, int(160*args.scale))
+    size = (int(160*args.scale), 80, int(160*args.scale))
  
     heads = {
         'hm': 1, # 1 channel Probability heat map.

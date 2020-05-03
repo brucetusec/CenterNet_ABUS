@@ -68,18 +68,16 @@ class residual(nn.Module):
         skip  = self.skip(x)
         return self.relu(bn2 + skip)
 
-class dilated_residual(nn.Module):
-    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True, dilation=1):
-        super(dilated_residual, self).__init__()
+class residual_2D(nn.Module):
+    def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
+        super(residual_2D, self).__init__()
 
         pad = (k - 1) // 2
         self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
         self.bn1   = nn.GroupNorm(8, out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
-        if dilation is 2:
-            pad += 1
-        self.conv2 = nn.Conv3d(out_dim, out_dim, (k, k, k), padding=(pad, pad, pad), bias=False, dilation=dilation)
+        self.conv2 = nn.Conv3d(out_dim, out_dim, (k, 1, k), padding=(pad, 0, pad), bias=False)
         self.bn2   = nn.GroupNorm(8, out_dim)
         
         self.skip  = nn.Sequential(
@@ -99,12 +97,12 @@ class dilated_residual(nn.Module):
         skip  = self.skip(x)
         return self.relu(bn2 + skip)
 
-class residual_2D(nn.Module):
+class residual_2D_uncompress(nn.Module):
     def __init__(self, k, inp_dim, out_dim, stride=1, with_gn=True):
-        super(residual_2D, self).__init__()
+        super(residual_2D_uncompress, self).__init__()
 
         pad = (k - 1) // 2
-        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, 1, k), padding=(pad, 0, pad), stride=(stride, 1, stride), bias=not with_gn)
         self.bn1   = nn.GroupNorm(8, out_dim)
         self.relu1 = nn.ReLU(inplace=True)
 
@@ -112,7 +110,7 @@ class residual_2D(nn.Module):
         self.bn2   = nn.GroupNorm(8, out_dim)
         
         self.skip  = nn.Sequential(
-            nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
+            nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, 1, stride), bias=False),
             nn.GroupNorm(8, out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
         self.relu  = nn.ReLU(inplace=True)
@@ -277,7 +275,7 @@ class exkp(BasicModule):
 
         self.pre = nn.Sequential(
             asym_convolution(7, 1, 8, stride=2),
-            residual_2D(3, 8, 32, stride=2)
+            residual_2D_uncompress(3, 8, 32, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
@@ -371,7 +369,7 @@ class HourglassNet(exkp):
         # Number of channel
         dims    = [32, 64, 128]
         # Number of layers of convolution
-        modules = [2, 2, 1]
+        modules = [2, 1, 1]
 
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
