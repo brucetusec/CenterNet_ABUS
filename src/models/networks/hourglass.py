@@ -275,7 +275,7 @@ class exkp(BasicModule):
 
         self.pre = nn.Sequential(
             asym_convolution(7, 1, 8, stride=2),
-            residual_2D_uncompress(3, 8, 32, stride=2)
+            residual_2D(3, 8, 32, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
@@ -369,7 +369,7 @@ class HourglassNet(exkp):
         # Number of channel
         dims    = [32, 64, 128]
         # Number of layers of convolution
-        modules = [2, 1, 1]
+        modules = [2, 2, 2]
 
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
