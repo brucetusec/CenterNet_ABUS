@@ -121,19 +121,20 @@ def train(args):
         train_hist['valid_wh_loss'].append(valid_wh_loss)
         train_hist['valid_total_loss'].append(current_loss)
         train_hist['train_loss'].append(train_loss)
+        plt.figure()
+        plt.plot(train_hist['train_loss'], color='k')
+        plt.plot(train_hist['valid_total_loss'], color='r')
+        plt.plot(train_hist['valid_hm_loss'], color='b')
+        plt.plot(train_hist['valid_wh_loss'], color='g')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.savefig('loss_fold{}.png'.format(args.crx_valid))
+
         print("Epoch: [{:d}], valid_hm_loss: {:.3f}, valid_wh_loss: {:.3f}".format((epoch + 1), valid_hm_loss, valid_wh_loss))
         print('Epoch exec time: {} min'.format((time.time() - epoch_start_time)/60))
 
     print("Training finished.")
     print("Total time cost: {} min.".format((time.time() - start_time)/60))
-    plt.plot(train_hist['train_loss'], color='k')
-    plt.plot(train_hist['valid_total_loss'], color='r')
-    plt.plot(train_hist['valid_hm_loss'], color='b')
-    plt.plot(train_hist['valid_wh_loss'], color='g')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.savefig('loss_fold{}.png'.format(args.crx_valid))
-    plt.show()
 
 
 def _parse_args():

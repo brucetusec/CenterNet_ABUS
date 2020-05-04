@@ -88,7 +88,7 @@ class FocalLoss(nn.Module):
     '''nn.Module warpper for focal loss'''
     def __init__(self):
         super(FocalLoss, self).__init__()
-        self.neg_loss = _neg_loss
+        self.neg_loss = _slow_neg_loss
 
     def forward(self, out, target):
         return self.neg_loss(out, target)
