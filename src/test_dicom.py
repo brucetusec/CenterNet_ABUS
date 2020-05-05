@@ -1,5 +1,6 @@
 import os, argparse
 import pydicom as dicom
+from scipy import ndimage
 
 
 def loadFileInformation(filename):
@@ -20,8 +21,13 @@ def loadFileInformation(filename):
     return [data, float(ds.SpacingBetweenSlices), float(ds.PixelSpacing[0]), float(ds.PixelSpacing[1])]
 
 
-def main(args):
-    
+def main(args): 
+    SCALE = 1
+    img_vol, z_PixelSpacing, y_PixelSpacing, x_PixelSpacing = loadFileInformation("./dicom/new_CASE/SR_Cai^Shunping_965_201902141326/1.3.6.1.4.1.47779.1.002.dcm")
+    print([z_PixelSpacing*SCALE, y_PixelSpacing*SCALE, x_PixelSpacing*SCALE])
+    print(img_vol.shape)
+    img_vol = ndimage.interpolation.zoom(img_vol, [z_PixelSpacing*SCALE, y_PixelSpacing*SCALE, x_PixelSpacing*SCALE], mode='nearest')
+    print(img_vol.shape)
     return 
 
 

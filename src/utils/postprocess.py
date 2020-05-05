@@ -70,13 +70,15 @@ def eval_precision_recall(pred_BB, true_BB, det_thresh, scale):
     FN = len(true_BB)-gt_hits.sum()
     return int(TP),int(FP),int(FN),hits_index,hits_iou,hits_score
 
-
-def centroid_distance(box1, box2):
+# scale = (640/line[1], 160/line[2], 640/line[3])
+def centroid_distance(box1, box2, scale):
     b1_z0, b1_y0, b1_x0, b1_z1, b1_y1, b1_x1 = box1
     b2_z0, b2_y0, b2_x0, b2_z1, b2_y1, b2_x1 = box2
 
-    b1_z0, b1_y0, b1_x0, b1_z1, b1_y1, b1_x1 = int(b1_z0), int(b1_y0), int(b1_x0), int(b1_z1), int(b1_y1), int(b1_x1)
-    b2_z0, b2_y0, b2_x0, b2_z1, b2_y1, b2_x1 = int(b2_z0), int(b2_y0), int(b2_x0), int(b2_z1), int(b2_y1), int(b2_x1)
+    b1_z0, b1_y0, b1_x0, b1_z1, b1_y1, b1_x1 = \
+        int(b1_z0/scale[0]/4), int(b1_y0/scale[1]/4), int(b1_x0/scale[2]/4), int(b1_z1/scale[0]/4), int(b1_y1/scale[1]/4), int(b1_x1/scale[2]/4)
+
+    b2_z0, b2_y0, b2_x0, b2_z1, b2_y1, b2_x1 = int(b2_z0/4), int(b2_y0/4), int(b2_x0/4), int(b2_z1/4), int(b2_y1/4), int(b2_x1/4)
     
     b1_centroid_z, b1_centroid_y, b1_centroid_x = (b1_z1+b1_z0)/2, (b1_y1+b1_y0)/2, (b1_x1+b1_x0)/2
     b2_centroid_z, b2_centroid_y, b2_centroid_x = (b2_z1+b2_z0)/2, (b2_y1+b2_y0)/2, (b2_x1+b2_x0)/2
@@ -89,7 +91,7 @@ def centroid_distance(box1, box2):
     return dist
 
 
-def eval_precision_recall_by_dist(pred_BB, pred_score, true_BB, dist_thresh):
+def eval_precision_recall_by_dist(pred_BB, true_BB, dist_thresh, scale):
 
     pred_hits = np.zeros(len(pred_BB))
     gt_hits = np.zeros(len(true_BB))
@@ -101,12 +103,12 @@ def eval_precision_recall_by_dist(pred_BB, pred_score, true_BB, dist_thresh):
 
         for gt_idx, gt_roi in enumerate(true_BB):
             
-            dist = centroid_distance(pred_bb[:6], gt_roi[:6])
+            dist = centroid_distance(pred_bb[:6], gt_roi[:6], scale)
             if dist <= dist_thresh:
                 gt_hits[gt_idx] = 1
                 hits_index[gt_idx] = pred_idx
                 hits_iou[gt_idx] = dist
-                hits_score[gt_idx] = pred_score[pred_idx]
+                hits_score[gt_idx] = pred_bb[6]
                 pred_hits[pred_idx] = 1
 
     TP = gt_hits.sum()
