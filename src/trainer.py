@@ -129,6 +129,7 @@ def train(args):
         plt.ylabel('Loss')
         plt.xlabel('Epoch')
         plt.savefig('loss_fold{}.png'.format(args.crx_valid))
+        plt.close()
 
         print("Epoch: [{:d}], valid_hm_loss: {:.3f}, valid_wh_loss: {:.3f}".format((epoch + 1), valid_hm_loss, valid_wh_loss))
         print('Epoch exec time: {} min'.format((time.time() - epoch_start_time)/60))
