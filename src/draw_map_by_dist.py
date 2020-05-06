@@ -121,7 +121,11 @@ def main(args):
             out_boxes_s = []
 
             for bx in box_list:
-                if bx[6] >= score_hit_thre and (bx[3]-bx[0]<=20 or bx[5]-bx[2]<=20):
+                axis = [0,0,0]
+                axis[0] = (bx[3] - bx[0]) / scale[0] / 4
+                axis[1] = (bx[4] - bx[1]) / scale[1] / 4
+                axis[2] = (bx[5] - bx[2]) / scale[2] / 4
+                if bx[6] >= score_hit_thre and (axis[0] < 10 and axis[1] < 10 and axis[2] < 10):
                     out_boxes_s.append(list(bx))
 
             pred_small_num.append(len(out_boxes_s))
@@ -212,14 +216,14 @@ def main(args):
     if len(data) == 0:
         print('Inference result is empty.')
     else:
-        draw_full(data[..., 2], data[..., 3], '#FF6D6C', 'Dist > 15mm', '-', 1)
-        draw_full(data[..., 5], data[..., 6], '#FF0000', 'Dist > 10mm', ':', 1)
+        draw_full(data[..., 2], data[..., 3], '#FF0000', 'Dist > 15mm', '-', 1)
+        draw_full(data[..., 5], data[..., 6], '#FF6D6C', 'Dist > 10mm', ':', 1)
 
     if len(data_s) == 0:
        print('Inference result for small is empty.')
     else:
-       draw_full(data_s[..., 2], data_s[..., 3], '#6D6CFF', 'Dist > 15mm', '-', 1)
-       draw_full(data_s[..., 5], data_s[..., 6], '#0000FF', 'Dist > 10mm', ':', 1)
+       draw_full(data_s[..., 2], data_s[..., 3], '#0000FF', 'Dist > 15mm', '-', 1)
+       draw_full(data_s[..., 5], data_s[..., 6], '#6D6CFF', 'Dist > 10mm', ':', 1)
 
     axes = plt.gca()
     axes.set_aspect('auto')
@@ -233,7 +237,7 @@ def main(args):
     plt.legend(loc='lower left')
     plt.ylabel('Precision')
     plt.xlabel('Sensitivity')
-    plt.savefig('map_test.png')
+    plt.savefig('map_dist.png')
     plt.show()
 
 

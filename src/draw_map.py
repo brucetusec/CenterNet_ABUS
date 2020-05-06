@@ -76,11 +76,20 @@ def main(args):
             boxes = line[-1].split(' ')
             boxes = list(map(lambda box: box.split(','), boxes))
             true_box = [list(map(float, box)) for box in boxes]
-            true_box_s = list(filter(lambda li: li[3]-li[0]<=20 or li[5]-li[2]<=20, true_box))
+            true_box_s = []
+            # For the npy volume (after interpolation by spacing), 4px = 1mm
+            for li in true_box:
+                axis = [0,0,0]
+                axis[0] = (li[3] - li[0]) / 4
+                axis[1] = (li[4] - li[1]) / 4
+                axis[2] = (li[5] - li[2]) / 4
+                if axis[0] < 10 and axis[1] < 10 and axis[2] < 10:
+                    true_box_s.append(li)
+
             if i == 0:
                 true_num += len(true_box)
                 true_small_num += len(true_box_s)
-            #true_box = list(filter(lambda li: li[3]-li[0]>20 and li[5]-li[2]>20, ground_true_box))
+
             file_name = line[0]
             file_table.append(file_name)
             
@@ -112,7 +121,11 @@ def main(args):
             out_boxes_s = []
 
             for bx in box_list:
-                if bx[6] >= score_hit_thre and (bx[3]-bx[0]<=20 or bx[5]-bx[2]<=20):
+                axis = [0,0,0]
+                axis[0] = (bx[3] - bx[0]) / scale[0] / 4
+                axis[1] = (bx[4] - bx[1]) / scale[1] / 4
+                axis[2] = (bx[5] - bx[2]) / scale[2] / 4
+                if bx[6] >= score_hit_thre and (axis[0] < 10 and axis[1] < 10 and axis[2] < 10):
                     out_boxes_s.append(list(bx))
 
             pred_small_num.append(len(out_boxes_s))
@@ -224,7 +237,7 @@ def main(args):
     plt.legend(loc='lower left')
     plt.ylabel('Precision')
     plt.xlabel('Sensitivity')
-    plt.savefig('map_test.png')
+    plt.savefig('map_iou.png')
     plt.show()
 
 

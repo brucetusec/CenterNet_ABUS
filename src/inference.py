@@ -11,9 +11,9 @@ def _get_dilated_range(coord, width, scale=1, dilation=4):
     center = (dilation*coord + 2) / scale
     return (center - width//2), (center + width//2)
 
-def _get_topk_wipeoff(boxes, output, size, wh_pred, topk=10, scale=1):
+def _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=10, scale=1):
     dilation = (640/size[0], 160/size[1], 640/size[2])
-    hmax = nms(output[-1]['hm'])
+    hmax = nms(hm_pred)
     topk_scores, topk_inds = torch.topk(hmax.view(-1), topk)
     print('Top {}-{} predicted score:'.format(len(boxes)+1, len(boxes)+topk), list(map(lambda score: round(score, 3), topk_scores.tolist())))
     z = topk_inds/(size[1]*size[0])
@@ -31,33 +31,33 @@ def _get_topk_wipeoff(boxes, output, size, wh_pred, topk=10, scale=1):
         x_bot, x_top = _get_dilated_range(x[i], w2, scale=args.scale, dilation=dilation[2])
         boxes.append([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
         # Too lazy to refactor
-        output[-1]['hm'][0,0,z[i],y[i],x[i]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],x[i]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i],x[i]] = 0
-        # output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],x[i]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],x[i]] = 0
-        # output[-1]['hm'][0,0,z[i],y[i]-1,x[i]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,x[i]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i]-1,x[i]] = 0
-        # output[-1]['hm'][0,0,z[i],y[i],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i],y[i]-1,(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i]-1,(x[i]+1)%size[2]] = 0
-        # output[-1]['hm'][0,0,z[i],y[i],x[i]-1] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i],x[i]-1] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i],x[i]-1] = 0
-        # output[-1]['hm'][0,0,z[i],(y[i]+1)%size[1],x[i]-1] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]-1] = 0
-        # output[-1]['hm'][0,0,z[i]-1,(y[i]+1)%size[1],x[i]-1] = 0
-        # output[-1]['hm'][0,0,z[i],y[i]-1,x[i]-1] = 0
-        # output[-1]['hm'][0,0,(z[i]+1)%size[0],y[i]-1,x[i]-1] = 0
-        # output[-1]['hm'][0,0,z[i]-1,y[i]-1,x[i]-1] = 0
+        hm_pred[0,0,z[i],y[i],x[i]] = 0
+        # hm_pred[0,0,(z[i]+1)%size[0],y[i],x[i]] = 0
+        # hm_pred[0,0,z[i]-1,y[i],x[i]] = 0
+        # hm_pred[0,0,z[i],(y[i]+1)%size[1],x[i]] = 0
+        # hm_pred[0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]] = 0
+        # hm_pred[0,0,z[i]-1,(y[i]+1)%size[1],x[i]] = 0
+        # hm_pred[0,0,z[i],y[i]-1,x[i]] = 0
+        # hm_pred[0,0,(z[i]+1)%size[0],y[i]-1,x[i]] = 0
+        # hm_pred[0,0,z[i]-1,y[i]-1,x[i]] = 0
+        # hm_pred[0,0,z[i],y[i],(x[i]+1)%size[2]] = 0
+        # hm_pred[0,0,(z[i]+1)%size[0],y[i],(x[i]+1)%size[2]] = 0
+        # hm_pred[0,0,z[i]-1,y[i],(x[i]+1)%size[2]] = 0
+        # hm_pred[0,0,z[i],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
+        # hm_pred[0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
+        # hm_pred[0,0,z[i]-1,(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
+        # hm_pred[0,0,z[i],y[i]-1,(x[i]+1)%size[2]] = 0
+        # hm_pred[0,0,(z[i]+1)%size[0],y[i]-1,(x[i]+1)%size[2]] = 0
+        # hm_pred[0,0,z[i]-1,y[i]-1,(x[i]+1)%size[2]] = 0
+        # hm_pred[0,0,z[i],y[i],x[i]-1] = 0
+        # hm_pred[0,0,(z[i]+1)%size[0],y[i],x[i]-1] = 0
+        # hm_pred[0,0,z[i]-1,y[i],x[i]-1] = 0
+        # hm_pred[0,0,z[i],(y[i]+1)%size[1],x[i]-1] = 0
+        # hm_pred[0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]-1] = 0
+        # hm_pred[0,0,z[i]-1,(y[i]+1)%size[1],x[i]-1] = 0
+        # hm_pred[0,0,z[i],y[i]-1,x[i]-1] = 0
+        # hm_pred[0,0,(z[i]+1)%size[0],y[i]-1,x[i]-1] = 0
+        # hm_pred[0,0,z[i]-1,y[i]-1,x[i]-1] = 0
     
     return boxes
 
@@ -70,8 +70,8 @@ def main(args):
     }
     model = get_large_hourglass_net(heads, n_stacks=1, debug=False)
     model.load(chkpts_dir, args.epoch)
-    model.eval()
     model = model.to(device)
+    model.eval()
 
     trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=args.fold_num, crx_partition='valid', downsample=args.scale)
     trainset_loader = DataLoader(trainset, batch_size=1, shuffle=False, num_workers=0)
@@ -85,19 +85,13 @@ def main(args):
             print('***************************')
             print('Processing: ', f_name)
             wh_pred = torch.abs(output[-1]['wh'])
+            hm_pred = output[-1]['hm']
             boxes = []
             # First round
-            boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=15)
+            boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, scale=args.scale, topk=15)
 
             # Second round
-            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
-
-            # Third round
-            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
-            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
-            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
-            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
-            # boxes = _get_topk_wipeoff(boxes, output, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, scale=args.scale, topk=5)
 
             boxes = np.array(boxes, dtype=float)
             np.save(os.path.join(npy_dir, f_name), boxes)

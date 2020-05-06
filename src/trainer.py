@@ -3,6 +3,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import ExponentialLR
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
@@ -47,6 +48,7 @@ def train(args):
         init_ep = 0
     end_ep = args.max_epoch
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    optim_sched = ExponentialLR(optimizer, 0.92, last_epoch=-1)
     model.to(device)
     model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
 
@@ -67,12 +69,12 @@ def train(args):
 
         # Training
         model.train()
+        optimizer.zero_grad()
         for batch_idx, (data_img, data_hm, data_wh, _) in enumerate(trainset_loader):
             if use_cuda:
                 data_img = data_img.cuda()
                 data_hm = data_hm.cuda()
                 data_wh = data_wh.cuda()
-            optimizer.zero_grad()
             output = model(data_img)
             wh_pred = torch.abs(output[-1]['wh'])
             hm_loss = crit_hm(output[-1]['hm'], data_hm)
@@ -83,11 +85,16 @@ def train(args):
             with amp.scale_loss(total_loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
 
-            optimizer.step()
+            if ((batch_idx % 8) is 0) or (batch_idx == len(trainset_loader) - 1):
+                print('Gradient applied at batch #', batch_idx)
+                optimizer.step()
+                optimizer.zero_grad()
             
             print("Epoch: [{:2d}] [{:3d}], hm_loss: {:.3f}, wh_loss: {:.3f}, total_loss: {:.3f}"\
                 .format((epoch + 1), (batch_idx + 1), hm_loss.item(), wh_loss.item(), total_loss.item()))
         
+        optim_sched.step()
+
         # Validation
         model.eval()
         with torch.no_grad():

@@ -15,11 +15,11 @@ def main(args):
     model = get_large_hourglass_net(heads, n_stacks=1, debug=True)
     model = model.to(device)
 
-    trainset = AbusNpyFormat(root=root, downsample=1)
+    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=0, crx_partition='train', augmentation=True, downsample=1)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     for batch_idx, (data_img, hm_gt, box_gt, _) in enumerate(trainset_loader):
         data_img = data_img.to(device)
-        print('Batch:', data_img.shape)
+        print('Batch number:', len(trainset_loader))
         output = model(data_img)
         print('Output length:', len(output))
         print('HM tensor:', output[-1]['hm'].shape)
