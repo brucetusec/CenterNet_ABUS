@@ -2,39 +2,7 @@ import os, argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from utils.postprocess import eval_precision_recall
-
-#####################
-auc_list = []
-
-def AUC(froc_x, froc_y, x_limit):
-    global auc_list
-    froc_x = np.array(froc_x)
-    froc_y = np.array(froc_y)
-
-    area = np.trapz(froc_y[::-1], x=froc_x[::-1], dx=0.001)
-    auc_list.append(area)
-    return area
-
-
-def draw_full(froc_x, froc_y, color, label, linestyle, x_limit):
-    area = AUC(froc_x, froc_y, x_limit)
-    plt.plot(froc_x, froc_y, color=color, label=label +
-             ', Az = %.3f' % area, linestyle=linestyle)
-
-def build_threshold():
-    thresholds = []
-    
-    tmp=0.002
-    for i in range(0, 124):
-        thresholds.append(tmp)
-        tmp += 0.002
-
-    for i in range(0, 75):
-        thresholds.append(tmp)
-        tmp += 0.01
-     
-    return thresholds
-
+from utils.misc import draw_full, build_threshold
 
 def main(args):
     num_npy = os.listdir(npy_dir) # dir is your directory path
