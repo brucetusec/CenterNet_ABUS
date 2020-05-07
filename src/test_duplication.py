@@ -1,13 +1,14 @@
 import os, argparse
 
 def main(args):
-    with open(root + 'annotations/old_all.txt', 'r') as f:
+    with open(root + 'annotations/five_fold.txt', 'r') as f:
         lines = f.read().splitlines()
     
     lines = list(map(lambda s: s.split(','), lines))
-    for i in range(len(lines)-1):
-        if lines[i][0]==lines[i+1][0]:
-            print('Duplication found at {}.'.format(i))
+    for i in range(len(lines)):
+        for j in range(len(lines)):
+            if i < j and lines[i][0]==lines[j][0]:
+                print('Duplication found at {}, {}.'.format(i, j))
     
     print('{} lines of data in total.'.format(len(lines)))
 
