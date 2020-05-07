@@ -1,12 +1,11 @@
 data/
-result/
+!src/data/
 results/
 visualization/
 history/
-!src/data/
 src/test/*
-model_weights/
-*/checkpoints/
+src/checkpoints/
+src/*.png
 *pyc
 *_old.py
 dicom
