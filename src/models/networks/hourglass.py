@@ -172,7 +172,7 @@ def make_hg_layer(kernel, dim0, dim1, mod, layer=convolution, **kwargs):
 
 def make_hm_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
-        convolution(3, cnv_dim, curr_dim, with_gn=True),
+        residual(3, cnv_dim, curr_dim, with_gn=True),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1)),
         nn.Sigmoid()
     )

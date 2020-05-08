@@ -36,9 +36,9 @@ def build_threshold():
     thresholds = []
     
     tmp=0.01
-    for i in range(0, 120):
+    for i in range(0, 48):
         thresholds.append(tmp)
-        tmp += 0.002
+        tmp += 0.005
 
     for i in range(0, 75):
         thresholds.append(tmp)
