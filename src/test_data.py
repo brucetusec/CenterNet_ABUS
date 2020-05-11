@@ -6,41 +6,49 @@ from utils.heatmap import gen_3d_heatmap, gen_3d_hw
 from data.abus_data import AbusNpyFormat
 np.set_printoptions(threshold=sys.maxsize)
 
-def draw_slice(volume, dir, label=None):
+TRANSPARENCY = .25  # Degree of transparency, 0-100%
+OPACITY = int(255 * TRANSPARENCY)
+
+def draw_slice(volume, gt, dir, label=None):
     if not os.path.exists(dir):
         os.makedirs(dir)
-    min, max = torch.min(volume), torch.max(volume)
-    volume = ((volume-min)/max)*255
-    volume = volume.to(torch.uint8).detach().numpy()
-    for i in range(np.shape(volume)[1]):
-        img = Image.fromarray(volume[:,i,:].astype(np.uint8), 'L')
-        img = img.convert(mode='RGB')
-        draw = ImageDraw.Draw(img)
+    min, max = torch.min(gt), torch.max(gt)
+    gt = ((gt-min)/max)*255
+    gt = gt.to(torch.uint8).detach().numpy()
+    for i in range(np.shape(gt)[1]):
+        overlay = Image.fromarray(gt[:,i,:].astype(np.uint8), 'L')
+        overlay = overlay.convert(mode='RGBA')
+        overlay = overlay.resize((640, 640), Image.BILINEAR)
+        overlay.putalpha(160)
+        draw = ImageDraw.Draw(overlay)
         if label != None:
             for bx in label:
-                if int(bx['y_bot']) <= i <= int(bx['y_top']):
-                    draw.point([(10, 10), (19, 12), (35, 14), (60, 16)])
+                if int(bx['y_bot']/4) <= i <= int(bx['y_top']/4):
                     draw.rectangle([(bx['x_bot'], bx['z_bot']),(bx['x_top'], bx['z_top'])],outline ="red", width=2)
+
+        vol = Image.fromarray(volume[:,i*4,:].astype(np.uint8), 'L')
+        img = vol.convert(mode='RGBA')
+
+        # Alpha composite these two images together to obtain the desired result.
+        img = Image.alpha_composite(img, overlay)
+        img = img.convert("RGB")
         img.save(os.path.join(dir ,(str(i)+'.png')))
 
 def main(args):
     all_data = AbusNpyFormat(root, crx_valid=False, crx_fold_num=4, augmentation=False)
-    data, hm, box, label = all_data.__getitem__(args.index)
+    data, hm, wh, label = all_data.__getitem__(args.index)
     print('Dataset size:', all_data.__len__())
-    print('Shape of data:', data.size())
+    print('Shape of data:', data.shape, hm.shape, wh.shape)
 
+    data = data.detach().numpy()
     tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'hm')
-    draw_slice(hm[0], tmp_dir)
+    draw_slice(data[0], hm[0], tmp_dir, label=label[0])
     tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'wh_x')
-    draw_slice(box[2], tmp_dir)
+    draw_slice(data[0], wh[2], tmp_dir, label=label[0])
     tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'wh_y')
-    draw_slice(box[1], tmp_dir)
+    draw_slice(data[0], wh[1], tmp_dir, label=label[0])
     tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'wh_z')
-    draw_slice(box[0], tmp_dir)
-
-    tmp_dir = os.path.join(os.path.dirname(__file__),'test',str(args.index),'vol')
-    draw_slice(data[0], tmp_dir, label=label[0])
-
+    draw_slice(data[0], wh[0], tmp_dir, label=label[0])
     return
 
 def _parse_args():
