@@ -167,8 +167,8 @@ def main(args):
                 sum_FP_IOU_1_s/total_pass])
 
         print('Threshold:{:.3f}'.format(score_hit_thre))
-        print('Dist of Center> 10mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity_IOU_1, precision_IOU_1, sum_FP_IOU_1/total_pass))
-        print('Dist of Center> 15mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity, precision, sum_FP/total_pass))
+        print('Dist of Center < 15mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity, precision, sum_FP/total_pass))
+        print('Dist of Center < 10mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity_IOU_1, precision_IOU_1, sum_FP_IOU_1/total_pass))
         print('\n')
 
     print('Small/All tumors: {}/{}'.format(true_small_num, true_num))
@@ -184,14 +184,14 @@ def main(args):
     if len(data) == 0:
         print('Inference result is empty.')
     else:
-        draw_full(data[..., 2], data[..., 3], '#FF0000', 'Dist > 15mm', '-', 1)
-        draw_full(data[..., 5], data[..., 6], '#FF6D6C', 'Dist > 10mm', ':', 1)
+        draw_full(data[..., 2], data[..., 3], '#FF0000', 'Dist < 15mm', '-', 1)
+        draw_full(data[..., 5], data[..., 6], '#FF6D6C', 'Dist < 10mm', ':', 1)
 
     if len(data_s) == 0:
        print('Inference result for small is empty.')
     else:
-       draw_full(data_s[..., 2], data_s[..., 3], '#0000FF', 'Dist > 15mm', '-', 1)
-       draw_full(data_s[..., 5], data_s[..., 6], '#6D6CFF', 'Dist > 10mm', ':', 1)
+       draw_full(data_s[..., 2], data_s[..., 3], '#0000FF', 'Dist < 15mm', '-', 1)
+       draw_full(data_s[..., 5], data_s[..., 6], '#6D6CFF', 'Dist < 10mm', ':', 1)
 
     axes = plt.gca()
     axes.set_aspect('auto')

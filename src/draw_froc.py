@@ -1,37 +1,8 @@
 import os, argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from utils.postprocess import eval_precision_recall
-
-#####################
-auc_list = []
-
-def AUC(froc_x, froc_y, x_limit):
-    global auc_list
-    froc_x = np.array(froc_x)
-    froc_y = np.array(froc_y)
-
-    area = np.trapz(froc_y[::-1], x=froc_x[::-1], dx=0.001)
-    auc_list.append(area)
-    return area
-
-
-def draw_full(froc_x, froc_y, color, label, linestyle, x_limit):
-    plt.plot(froc_x, froc_y, color=color, label=label, linestyle=linestyle)
-
-def build_threshold():
-    thresholds = []
-    
-    tmp=0.002
-    for i in range(0, 74):
-        thresholds.append(tmp)
-        tmp += 0.002
-
-    for i in range(0, 85):
-        thresholds.append(tmp)
-        tmp += 0.01
-     
-    return thresholds
+from utils.postprocess import eval_precision_recall_by_dist as eval
+from utils.misc import build_threshold, draw_full, AUC
 
 
 def main(args):
@@ -74,11 +45,20 @@ def main(args):
             boxes = line[-1].split(' ')
             boxes = list(map(lambda box: box.split(','), boxes))
             true_box = [list(map(float, box)) for box in boxes]
-            true_box_s = list(filter(lambda li: li[3]-li[0]<=20 or li[5]-li[2]<=20, true_box))
+            true_box_s = []
+            # For the npy volume (after interpolation by spacing), 4px = 1mm
+            for li in true_box:
+                axis = [0,0,0]
+                axis[0] = (li[3] - li[0]) / 4
+                axis[1] = (li[4] - li[1]) / 4
+                axis[2] = (li[5] - li[2]) / 4
+                if axis[0] < 10 and axis[1] < 10 and axis[2] < 10:
+                    true_box_s.append(li)
+
             if i == 0:
                 true_num += len(true_box)
                 true_small_num += len(true_box_s)
-            #true_box = list(filter(lambda li: li[3]-li[0]>20 and li[5]-li[2]>20, ground_true_box))
+
             file_name = line[0]
             file_table.append(file_name)
             
@@ -91,11 +71,11 @@ def main(args):
 
             pred_num.append(len(out_boxes))
 
-            TP, FP, FN, hits_index, hits_iou, hits_score = eval_precision_recall(
-                out_boxes, true_box, 0.25, scale)
+            TP, FP, FN, hits_index, hits_iou, hits_score = eval(
+                out_boxes, true_box, 15, scale)
 
-            TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1 = eval_precision_recall(
-                out_boxes, true_box, 0.1, scale)
+            TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1 = eval(
+                out_boxes, true_box, 10, scale)
 
             TP_table.append(TP)
             FP_table.append(FP)
@@ -110,16 +90,20 @@ def main(args):
             out_boxes_s = []
 
             for bx in box_list:
-                if bx[6] >= score_hit_thre and (bx[3]-bx[0]<=20 or bx[5]-bx[2]<=20):
+                axis = [0,0,0]
+                axis[0] = (bx[3] - bx[0]) / scale[0] / 4
+                axis[1] = (bx[4] - bx[1]) / scale[1] / 4
+                axis[2] = (bx[5] - bx[2]) / scale[2] / 4
+                if bx[6] >= score_hit_thre and (axis[0] < 10 and axis[1] < 10 and axis[2] < 10):
                     out_boxes_s.append(list(bx))
 
             pred_small_num.append(len(out_boxes_s))
 
-            TP_s, FP_s, FN_s, hits_index_s, hits_iou_s, hits_score_s = eval_precision_recall(
-                out_boxes_s, true_box_s, 0.25, scale)
+            TP_s, FP_s, FN_s, hits_index_s, hits_iou_s, hits_score_s = eval(
+                out_boxes_s, true_box_s, 15, scale)
 
-            TP_IOU_1_s, FP_IOU_1_s, FN_IOU_1_s, hits_index_IOU_1_s, hits_iou_IOU_1_s, hits_score_IOU_1_s = eval_precision_recall(
-                out_boxes_s, true_box_s, 0.1, scale)
+            TP_IOU_1_s, FP_IOU_1_s, FN_IOU_1_s, hits_index_IOU_1_s, hits_iou_IOU_1_s, hits_score_IOU_1_s = eval(
+                out_boxes_s, true_box_s, 10, scale)
 
             TP_table_s.append(TP_s)
             FP_table_s.append(FP_s)
@@ -196,21 +180,23 @@ def main(args):
     if len(data) == 0:
         print('Inference result is empty.')
     else:
-        draw_full(data[..., 4], data[..., 2], '#FF6D6C', 'IOU > 0.25 ', ':', 1)
-        draw_full(data[..., 7], data[..., 5], '#FF0000', 'IOU > 0.10 ', '-', 1)
+        draw_full(data[..., 7], data[..., 5], '#FF6D6C', 'Dist < 15', ':', 1)
+        draw_full(data[..., 4], data[..., 2], '#FF0000', 'Dist < 10', '-', 1)
 
     if len(data_s) == 0:
         print('Inference result for small is empty.')
     else:
-        draw_full(data_s[..., 4], data_s[..., 2], '#6D6CFF', 'IOU > 0.25 ', ':', 1)
-        draw_full(data_s[..., 7], data_s[..., 5], '#0000FF', 'IOU > 0.10 ', '-', 1)
+        draw_full(data_s[..., 7], data_s[..., 5], '#6D6CFF', 'Dist < 15', ':', 1)
+        draw_full(data_s[..., 4], data_s[..., 2], '#0000FF', 'Dist < 10', '-', 1)
 
     axes = plt.gca()
     axes.axis([0, 10, 0, 1])
     axes.set_aspect('auto')
-    x_tick = np.arange(0, 10, 1)
-    y_tick = np.arange(0, 1, 0.125)
+    axes.set_xlim(1, 10)
+    x_tick = np.arange(0, 11, 1)
     plt.xticks(x_tick)
+    axes.set_ylim(0.125, 1.01)
+    y_tick = np.arange(0, 1.125, 0.125)
     plt.yticks(y_tick)
     plt.legend(loc='lower right')
     plt.grid(b=True, which='major', axis='x')
