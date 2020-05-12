@@ -108,8 +108,8 @@ class RegL1Loss(nn.Module):
         zeros = torch.zeros(pred.shape).cuda()
         mask = torch.where(target > 0, ones, zeros)
         
-        # loss = nn.SmoothL1Loss(reduction='sum')
-        loss = nn.MSELoss(reduction='mean')
+        loss = nn.SmoothL1Loss(reduction='sum')
+        # loss = nn.MSELoss(reduction='mean')
         out = loss(pred * mask, target)
         out = out / (mask.sum() + 1e-4)
         del ones, zeros
