@@ -19,7 +19,7 @@ def _slow_neg_loss(pred, gt):
     pos_loss = pos_loss.sum()
     neg_loss = neg_loss.sum()
 
-    if pos_pred.nelement() == 0:
+    if num_pos == 0:
         loss = loss - neg_loss
     else:
         loss = loss - (pos_loss + neg_loss) / num_pos
