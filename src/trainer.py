@@ -65,7 +65,7 @@ def train(args):
         valid_hm_loss = 0
         valid_wh_loss = 0
         epoch_start_time = time.time()
-        lambda_s = args.lambda_s * (epoch/10 + 1)
+        lambda_s = args.lambda_s * (1.03**epoch)
 
         # Training
         model.train()
@@ -81,7 +81,7 @@ def train(args):
             wh_loss = crit_wh(wh_pred, data_wh)
 
             total_loss = hm_loss + lambda_s*wh_loss
-            train_loss += total_loss.item()
+            train_loss += (hm_loss.item() + args.lambda_s*wh_loss.item())
             with amp.scale_loss(total_loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
 
