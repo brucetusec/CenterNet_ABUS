@@ -23,7 +23,7 @@ def AUC(froc_x, froc_y, x_limit):
     froc_y = np.array(froc_y)
 
     area = np.trapz(froc_y[::-1], x=froc_x[::-1], dx=0.001)
-    return area
+    return area/np.max(froc_x[::-1])
 
 
 def draw_full(froc_x, froc_y, color, label, linestyle, x_limit):
@@ -35,13 +35,13 @@ def draw_full(froc_x, froc_y, color, label, linestyle, x_limit):
 def build_threshold():
     thresholds = []
     
-    tmp=0.01
-    for i in range(0, 48):
+    tmp=0.005
+    for i in range(0, 394):
         thresholds.append(tmp)
-        tmp += 0.005
+        tmp += 0.0025
 
-    for i in range(0, 75):
-        thresholds.append(tmp)
-        tmp += 0.01
+    # for i in range(0, 75):
+    #     thresholds.append(tmp)
+    #     tmp += 0.01
      
     return thresholds

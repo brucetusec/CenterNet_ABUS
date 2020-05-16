@@ -88,7 +88,7 @@ def main(args, root):
 
                 img.save(os.path.join(img_dir, (str(i)+'.png')))
 
-        if v is 'sag':
+        if v is 'tran':
             for i in range(np.shape(img_data)[0]):
                 img = Image.fromarray(img_data[i,:,:], 'L')
                 img = img.convert(mode='RGB')
@@ -117,7 +117,7 @@ def main(args, root):
 
                 img.save(os.path.join(img_dir, (str(i)+'.png')))
         
-        if v is 'tran':
+        if v is 'sag':
             for i in range(np.shape(img_data)[2]):
                 img = Image.fromarray(img_data[:,:,i], 'L')
                 img = img.convert(mode='RGB')

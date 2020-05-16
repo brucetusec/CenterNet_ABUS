@@ -145,7 +145,7 @@ def main(args):
         sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
         precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
 
-        if sensitivity_IOU_1 > 0.125:
+        if sum_FP_IOU_1/total_pass <= 8.001:
             PERF_per_thre.append([
                 score_hit_thre,
                 total_pass,
@@ -156,20 +156,20 @@ def main(args):
                 precision_IOU_1,
                 sum_FP_IOU_1/total_pass])
 
-            PERF_per_thre_s.append([
-                score_hit_thre,
-                total_pass,
-                sensitivity_s,
-                precision_s,
-                sum_FP_s/total_pass,
-                sensitivity_IOU_1_s,
-                precision_IOU_1_s,
-                sum_FP_IOU_1_s/total_pass])
+            # PERF_per_thre_s.append([
+            #     score_hit_thre,
+            #     total_pass,
+            #     sensitivity_s,
+            #     precision_s,
+            #     sum_FP_s/total_pass,
+            #     sensitivity_IOU_1_s,
+            #     precision_IOU_1_s,
+            #     sum_FP_IOU_1_s/total_pass])
 
     print('Small/All tumors: {}/{}'.format(true_small_num, true_num))
 
     data = np.array(PERF_per_thre)
-    data_s = np.array(PERF_per_thre_s)
+    # data_s = np.array(PERF_per_thre_s)
     # np.save(data_save_to,performnace_per_thre)
 
     font = {'family': 'Times New Roman',
@@ -180,20 +180,20 @@ def main(args):
     if len(data) == 0:
         print('Inference result is empty.')
     else:
-        draw_full(data[..., 7], data[..., 5], '#FF6D6C', 'Dist < 15', ':', 1)
-        draw_full(data[..., 4], data[..., 2], '#FF0000', 'Dist < 10', '-', 1)
+        draw_full(data[..., 7], data[..., 5], '#FF6D6C', 'Dist < 10mm', ':', 1)
+        draw_full(data[..., 4], data[..., 2], '#FF0000', 'Dist < 15mm', '-', 1)
 
-    if len(data_s) == 0:
-        print('Inference result for small is empty.')
-    else:
-        draw_full(data_s[..., 7], data_s[..., 5], '#6D6CFF', 'Dist < 15', ':', 1)
-        draw_full(data_s[..., 4], data_s[..., 2], '#0000FF', 'Dist < 10', '-', 1)
+    # if len(data_s) == 0:
+    #     print('Inference result for small is empty.')
+    # else:
+    #     draw_full(data_s[..., 7], data_s[..., 5], '#6D6CFF', 'Dist < 15', ':', 1)
+    #     draw_full(data_s[..., 4], data_s[..., 2], '#0000FF', 'Dist < 10', '-', 1)
 
     axes = plt.gca()
-    axes.axis([0, 10, 0, 1])
+    axes.axis([0, 8, 0, 1])
     axes.set_aspect('auto')
-    axes.set_xlim(1, 10)
-    x_tick = np.arange(0, 11, 1)
+    axes.set_xlim(1, 8)
+    x_tick = np.arange(0, 9, 1)
     plt.xticks(x_tick)
     axes.set_ylim(0.125, 1.01)
     y_tick = np.arange(0, 1.125, 0.125)
