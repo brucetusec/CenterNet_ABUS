@@ -199,7 +199,7 @@ def main(args):
     x_tick = np.arange(0, 1, 0.1)
     plt.xticks(x_tick)
     axes.set_ylim(0.125, 1.01)
-    y_tick = np.arange(0, 1, 0.125)
+    y_tick = np.arange(0, 1.01, 0.125)
     plt.yticks(y_tick)
     plt.grid(b=True, which='major', axis='x')
     plt.legend(loc='lower left')

@@ -88,7 +88,7 @@ def main(args):
             hm_pred = output[-1]['hm']
             boxes = []
             # First round
-            boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, scale=args.scale, topk=12)
+            boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, scale=args.scale, topk=50)
 
             # Second round
             # boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, scale=args.scale, topk=5)

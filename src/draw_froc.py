@@ -145,7 +145,7 @@ def main(args):
         sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
         precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
 
-        if sum_FP_IOU_1/total_pass <= 8.001:
+        if sum_FP_IOU_1/total_pass <= 25:
             PERF_per_thre.append([
                 score_hit_thre,
                 total_pass,
@@ -190,13 +190,13 @@ def main(args):
     #     draw_full(data_s[..., 4], data_s[..., 2], '#0000FF', 'Dist < 10', '-', 1)
 
     axes = plt.gca()
-    axes.axis([0, 8, 0, 1])
+    axes.axis([0, 25, 0, 1])
     axes.set_aspect('auto')
-    axes.set_xlim(1, 8)
-    x_tick = np.arange(0, 9, 1)
+    axes.set_xlim(1, 25)
+    x_tick = np.arange(0, 25, 2)
     plt.xticks(x_tick)
-    axes.set_ylim(0.125, 1.01)
-    y_tick = np.arange(0, 1.125, 0.125)
+    axes.set_ylim(0.125, 1)
+    y_tick = np.arange(0, 1, 0.1)
     plt.yticks(y_tick)
     plt.legend(loc='lower right')
     plt.grid(b=True, which='major', axis='x')

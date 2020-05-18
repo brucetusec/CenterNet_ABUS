@@ -1,5 +1,4 @@
-END=277
-for i in $(seq 0 $END);
+for i in {0..340..5};
 do
     python visualize.py -i $i -s ../visualization/;
 done

@@ -18,12 +18,16 @@ def loadFileInformation(filename):
     return [float(ds.SpacingBetweenSlices), float(ds.PixelSpacing[0]), float(ds.PixelSpacing[1])]
 
 
-def AUC(froc_x, froc_y, x_limit):
+def AUC(froc_x, froc_y, x_limit, normalize=False):
     froc_x = np.array(froc_x)
     froc_y = np.array(froc_y)
 
     area = np.trapz(froc_y[::-1], x=froc_x[::-1], dx=0.001)
-    return area/np.max(froc_x[::-1])
+
+    if normalize:
+        return area/np.max(froc_x[::-1])
+    else:
+        return area
 
 
 def draw_full(froc_x, froc_y, color, label, linestyle, x_limit):
