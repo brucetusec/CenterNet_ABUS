@@ -5,7 +5,8 @@ from utils.heatmap import gen_3d_heatmap, gen_3d_hw
 from torch.utils import data
 
 class AbusNpyFormat(data.Dataset):
-    def __init__(self, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False, downsample=1):
+    def __init__(self, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False, downsample=1, include_fp=False):
+        self.include_fp = include_fp
         self.root = root
         with open(self.root + 'annotations/rand_all.txt', 'r') as f:
             lines = f.read().splitlines()
@@ -32,6 +33,32 @@ class AbusNpyFormat(data.Dataset):
         else:
             self.gt = lines
 
+        if self.include_fp:
+            with open(self.root + 'annotations/fp_all.txt', 'r') as f:
+                fp_lines = f.read().splitlines()
+
+            folds = []
+            self.fp_gt = []      
+            if crx_valid:
+                for fi in range(5):
+                    if fi == 4:
+                        folds.append(fp_lines[int(fi*0.2*len(fp_lines)):])
+                    else:
+                        folds.append(fp_lines[int(fi*0.2*len(fp_lines)):int((fi+1)*0.2*len(fp_lines))])
+
+                cut_set = folds.pop(crx_fold_num)
+                if crx_partition == 'train':
+                    for li in folds:
+                        self.fp_gt += li
+                elif crx_partition == 'valid':
+                    self.fp_gt = cut_set
+                else:
+                    print('Use train set as default.')
+                    for li in folds:
+                        self.fp_gt += li
+            else:
+                self.fp_gt = fp_lines
+
         self.set_size = len(self.gt)
         self.aug = augmentation
         self.downsample = downsample
@@ -52,22 +79,37 @@ class AbusNpyFormat(data.Dataset):
         size = (640,160,640)
         gt_scale = (size[0]/int(line[1]),size[1]/int(line[2]),size[2]/int(line[3]))
 
+        scale = (4,4,4)
+
         # numpy array data (x,y,z) is not in the same order as gt label, which is (z,y,x)
-        data = np.load(self.root + 'converted_{}_{}_{}/'.format(self.img_size[0], self.img_size[1], self.img_size[2]) + line[0].replace('/', '_'))
-        data = torch.from_numpy(data)
-        data = torch.transpose(data, 0, 2).contiguous()
-        data = data.view(1,self.img_size[0],self.img_size[1],self.img_size[2]).to(torch.float32)
+        ori_data = np.load(self.root + 'converted_{}_{}_{}/'.format(self.img_size[0], self.img_size[1], self.img_size[2]) + line[0].replace('/', '_'))
+        ori_data = torch.from_numpy(ori_data)
+        ori_data = torch.transpose(ori_data, 0, 2).contiguous()
+        ori_data = ori_data.view(1,self.img_size[0],self.img_size[1],self.img_size[2]).to(torch.float32)
         
         true_boxes = line[-1].split(' ')
         true_boxes = list(map(lambda box: box.split(','), true_boxes))
         true_boxes = [list(map(int, box)) for box in true_boxes]
 
-        data, boxes = self._flipTensor(data, true_boxes, gt_scale, aug_mode = aug_mode)
-        for box in boxes:
-            if box['z_bot'] <= 0 or box['x_bot'] <= 0:
-                print(box)
+        data, boxes = self._flipTensor(ori_data, true_boxes, gt_scale, aug_mode = aug_mode)
 
-        scale = (4,4,4)
+        ############################
+        if self.include_fp:
+            line = self.fp_gt[index]
+            line = line.split(',', 4)
+        
+            fp_boxes = line[-1].split(' ')
+            fp_boxes = list(map(lambda box: box.split(','), fp_boxes))
+            fp_boxes = [list(map(int, box)) for box in fp_boxes]
+
+            _, fp_boxes = self._flipTensor(ori_data, fp_boxes, gt_scale, aug_mode = aug_mode)
+            for box in fp_boxes:
+                if box['z_bot'] <= 0 or box['x_bot'] <= 0:
+                    print(box)
+
+            fp_hm = gen_3d_heatmap(self.img_size, boxes, scale, downscale=self.downsample)
+            fp_hm = torch.from_numpy(fp_hm).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
+
 
         hm = gen_3d_heatmap(self.img_size, boxes, scale, downscale=self.downsample)
         hm = torch.from_numpy(hm).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
@@ -77,7 +119,10 @@ class AbusNpyFormat(data.Dataset):
         wh_y = torch.from_numpy(wh_y).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
         wh_z = torch.from_numpy(wh_z).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
 
-        return data, hm, torch.cat((wh_z, wh_y, wh_x), dim=0), [boxes,index]
+        if self.include_fp:
+            return data, hm, torch.cat((wh_z, wh_y, wh_x), dim=0), [boxes,index], fp_hm
+        else:
+            return data, hm, torch.cat((wh_z, wh_y, wh_x), dim=0), [boxes,index]
 
 
     def __len__(self):

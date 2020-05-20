@@ -118,7 +118,7 @@ def eval_precision_recall_by_dist(pred_BB, true_BB, dist_thresh, scale):
 
 def box_to_string(bbox):
     separator = ','
-    return separator.join(list(map(lambda x: str(x), bbox)))
+    return separator.join(list(map(lambda x: str(int(x)), bbox)))
 
 def pick_fp_by_dist(pred_BB, true_BB, dist_thresh, scale):
 
