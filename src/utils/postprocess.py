@@ -115,3 +115,25 @@ def eval_precision_recall_by_dist(pred_BB, true_BB, dist_thresh, scale):
     FP = len(pred_hits) - pred_hits.sum()
     FN = len(true_BB)-gt_hits.sum()
     return int(TP), int(FP), int(FN), hits_index, hits_iou, hits_score
+
+def box_to_string(bbox):
+    separator = ','
+    return separator.join(list(map(lambda x: str(x), bbox)))
+
+def pick_fp_by_dist(pred_BB, true_BB, dist_thresh, scale):
+
+    pred_hits = np.zeros(len(pred_BB))
+    fp_list = []
+
+    for pred_idx, pred_bb in enumerate(pred_BB):
+        for gt_idx, gt_roi in enumerate(true_BB):
+            dist = centroid_distance(pred_bb[:6], gt_roi[:6], scale)
+            if dist <= dist_thresh:
+                pred_hits[pred_idx] = 1
+        
+        if pred_hits[pred_idx] < 1:
+            fp_list.append(box_to_string(pred_bb))
+
+    FP = len(pred_hits) - pred_hits.sum()
+    
+    return int(FP), fp_list
