@@ -103,9 +103,6 @@ class AbusNpyFormat(data.Dataset):
             fp_boxes = [list(map(int, box)) for box in fp_boxes]
 
             _, fp_boxes = self._flipTensor(ori_data, fp_boxes, gt_scale, aug_mode = aug_mode)
-            for box in fp_boxes:
-                if box['z_bot'] <= 0 or box['x_bot'] <= 0:
-                    print(box)
 
             fp_hm = gen_3d_heatmap(self.img_size, boxes, scale, downscale=self.downsample)
             fp_hm = torch.from_numpy(fp_hm).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
