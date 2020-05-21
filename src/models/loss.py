@@ -104,13 +104,11 @@ class RegL1Loss(nn.Module):
         super(RegL1Loss, self).__init__()
 
     def forward(self, pred, target):
-        ones = torch.ones(pred.shape).cuda()
-        zeros = torch.zeros(pred.shape).cuda()
-        mask = torch.where(target > 0, ones, zeros)
+        # ones = torch.ones(pred.shape).cuda()
+        # zeros = torch.zeros(pred.shape).cuda()
+        # mask = torch.where(target > 0, ones, zeros)
         
-        loss = nn.SmoothL1Loss(reduction='sum')
+        loss = nn.SmoothL1Loss(reduction='mean')
         # loss = nn.MSELoss(reduction='mean')
         out = loss(pred * mask, target)
-        out = out / (mask.sum() + 1e-4)
-        del ones, zeros
         return out
