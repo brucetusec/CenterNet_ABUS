@@ -65,7 +65,7 @@ def train(args):
         valid_hm_loss = 0
         valid_wh_loss = 0
         epoch_start_time = time.time()
-        lambda_s = args.lambda_s * (1.03**epoch)
+        lambda_s = args.lambda_s # * (1.03**epoch)
 
         # Training
         model.train()
@@ -76,9 +76,8 @@ def train(args):
                 data_hm = data_hm.cuda()
                 data_wh = data_wh.cuda()
             output = model(data_img)
-            wh_pred = torch.abs(output[-1]['wh'])
             hm_loss = crit_hm(output[-1]['hm'], data_hm)
-            wh_loss = crit_wh(wh_pred, data_wh)
+            wh_loss = crit_wh(output[-1]['wh'], data_wh)
 
             total_loss = hm_loss + lambda_s*wh_loss
             train_loss += (hm_loss.item() + args.lambda_s*wh_loss.item())
@@ -104,9 +103,8 @@ def train(args):
                     data_hm = data_hm.cuda()
                     data_wh = data_wh.cuda()
                 output = model(data_img)
-                wh_pred = torch.abs(output[-1]['wh'])
                 hm_loss = crit_hm(output[-1]['hm'], data_hm)
-                wh_loss = crit_wh(wh_pred, data_wh)
+                wh_loss = crit_wh(output[-1]['wh'], data_wh)
 
                 valid_hm_loss += hm_loss.item()
                 valid_wh_loss += wh_loss.item()
