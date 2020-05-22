@@ -110,5 +110,5 @@ class RegL1Loss(nn.Module):
         
         loss = nn.SmoothL1Loss(reduction='mean')
         # loss = nn.MSELoss(reduction='mean')
-        out = loss(pred * mask, target)
+        out = loss(pred, target)
         return out
