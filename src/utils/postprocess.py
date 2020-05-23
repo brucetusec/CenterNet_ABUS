@@ -1,7 +1,7 @@
 import numpy as np
 import torch.nn as nn
 
-def nms(heat, kernel=3):
+def nms(heat, kernel=5):
     pad = (kernel - 1) // 2
 
     m = nn.MaxPool3d(kernel, stride=1, padding=pad)

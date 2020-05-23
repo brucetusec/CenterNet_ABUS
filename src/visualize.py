@@ -64,7 +64,7 @@ def main(args, root):
                 img = img.convert(mode='RGB')
                 draw = ImageDraw.Draw(img)
                 for bx in boxes:
-                    if bx['score'] < 0.2:
+                    if bx['score'] < 0.05:
                         continue
 
                     z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], bx['x_bot'], bx['x_top']
@@ -94,7 +94,7 @@ def main(args, root):
                 img = img.convert(mode='RGB')
                 draw = ImageDraw.Draw(img)
                 for bx in boxes:
-                    if bx['score'] < 0.2:
+                    if bx['score'] < 0.05:
                         continue
 
                     z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], bx['x_bot'], bx['x_top']
@@ -124,7 +124,7 @@ def main(args, root):
                 img = img.rotate(angle=-90, expand=True)
                 draw = ImageDraw.Draw(img)
                 for bx in boxes:
-                    if bx['score'] < 0.2:
+                    if bx['score'] < 0.05:
                         continue
 
                     z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], 640-bx['x_bot'], 640-bx['x_top']
