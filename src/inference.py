@@ -13,7 +13,7 @@ def _get_dilated_range(coord, width, scale=1, dilation=4):
 
 def _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=10, scale=1):
     dilation = (640/size[0], 160/size[1], 640/size[2])
-    hmax = nms(hm_pred)
+    hmax = nms(hm_pred, 15)
     topk_scores, topk_inds = torch.topk(hmax.view(-1), topk)
     print('Top {}-{} predicted score:'.format(len(boxes)+1, len(boxes)+topk), list(map(lambda score: round(score, 3), topk_scores.tolist())))
     z = topk_inds/(size[1]*size[0])
