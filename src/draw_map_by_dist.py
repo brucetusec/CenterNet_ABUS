@@ -69,7 +69,7 @@ def main(args):
                 axis[0] = (bx[3] - bx[0]) / scale[0] / 4
                 axis[1] = (bx[4] - bx[1]) / scale[1] / 4
                 axis[2] = (bx[5] - bx[2]) / scale[2] / 4
-                if bx[6] >= score_hit_thre and (bx[4] < 120 and bx[1] > 5):# and (axis[0] * axis[1] * axis[2] > 10):
+                if bx[6] >= score_hit_thre and (bx[4] < 120 and bx[1] > 5):# and not (axis[0] < 2 and axis[1] < 2 and axis[2] < 2):
                     out_boxes.append(list(bx))
 
             pred_num.append(len(out_boxes))
@@ -78,7 +78,7 @@ def main(args):
                 out_boxes, true_box, 15, scale)
 
             if FN > 0 and i is 0:
-                print("FN > 0:", line[0])
+                print("FN = {}: {}".format(FN, line[0]))
 
             TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 10, scale)
