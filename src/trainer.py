@@ -47,7 +47,24 @@ def train(args):
     else:
         init_ep = 0
     end_ep = args.max_epoch
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+
+    if args.freeze:
+        for param in model.pre.parameters():
+            param.requires_grad = False
+        for param in model.kps.parameters():
+            param.requires_grad = False
+        for param in model.cnvs.parameters():
+            param.requires_grad = False
+        for param in model.inters.parameters():
+            param.requires_grad = False
+        for param in model.inters_.parameters():
+            param.requires_grad = False
+        for param in model.cnvs_.parameters():
+            param.requires_grad = False
+        for param in model.hm.parameters():
+            param.requires_grad = False
+        
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
     optim_sched = ExponentialLR(optimizer, 0.92, last_epoch=-1)
     model.to(device)
     model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
@@ -152,6 +169,9 @@ def _parse_args():
     parser.add_argument('--lambda_s', type=float, default=0.1)
     parser.add_argument('--resume', type=bool, default=False)
     parser.add_argument('--resume_ep', type=int, default=0)
+    parser.add_argument('--freeze', dest='freeze', action='store_true')
+    parser.add_argument('--no-freeze', dest='freeze', action='store_false')
+    parser.set_defaults(freeze=False)
     return parser.parse_args()
 
 if __name__ == '__main__':

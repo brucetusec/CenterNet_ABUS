@@ -14,6 +14,26 @@ def main(args):
     }
     model = get_large_hourglass_net(heads, n_stacks=1, debug=True)
     model = model.to(device)
+    print(args.freeze)
+    if args.freeze:
+        for name, module in model._modules.items():
+            print(name)
+        print(type(model.parameters()))
+        print(type(filter(lambda p: p.requires_grad, model.parameters())))
+        for param in model.pre.parameters():
+            param.requires_grad = False
+        for param in model.kps.parameters():
+            param.requires_grad = False
+        for param in model.cnvs.parameters():
+            param.requires_grad = False
+        for param in model.inters.parameters():
+            param.requires_grad = False
+        for param in model.inters_.parameters():
+            param.requires_grad = False
+        for param in model.cnvs_.parameters():
+            param.requires_grad = False
+        for param in model.hm.parameters():
+            param.requires_grad = False
 
     trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=0, crx_partition='train', augmentation=True, downsample=1)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
@@ -31,6 +51,9 @@ def main(args):
 def _parse_args():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--freeze', dest='freeze', action='store_true')
+    parser.add_argument('--no-freeze', dest='freeze', action='store_false')
+    parser.set_defaults(freeze=False)
     parser.add_argument(
         '--batch_size', '-s', type=int, required=True,
         help='Specify batch size.'
