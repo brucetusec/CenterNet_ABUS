@@ -6,7 +6,7 @@ def _slow_neg_loss(pred, gt):
     pos_inds = gt.gt(0.67)
     neg_inds = gt.lt(0.67)
 
-    neg_weights = torch.pow(1 - gt[neg_inds], 4)
+    neg_weights = torch.pow(1 - gt[neg_inds], 2)
 
     loss = 0
     pos_pred = pred[pos_inds]

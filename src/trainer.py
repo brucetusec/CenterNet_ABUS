@@ -42,8 +42,8 @@ def train(args):
     model = get_large_hourglass_net(heads, n_stacks=1)
     if args.resume:
         init_ep = max(0, args.resume_ep)
-        print('Resume training from the latest checkpoint.')
-        model.load(chkpts_dir, 'latest')
+        print('Resume training from the designated checkpoint.')
+        model.load(chkpts_dir, str(args.resume_ep))
     else:
         init_ep = 0
     end_ep = args.max_epoch
@@ -76,6 +76,7 @@ def train(args):
     start_time = time.time()
     min_loss = 0
 
+    first_ep = True
     for epoch in range(init_ep, end_ep):
         train_loss = 0
         current_loss = 0
@@ -101,7 +102,7 @@ def train(args):
             with amp.scale_loss(total_loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
 
-            if  (epoch is 0 and batch_idx < 20) or ((batch_idx % 8) is 0) or (batch_idx == len(trainset_loader) - 1):
+            if  (first_ep and batch_idx < 20) or ((batch_idx % 8) is 0) or (batch_idx == len(trainset_loader) - 1):
                 print('Gradient applied at batch #', batch_idx)
                 optimizer.step()
                 optimizer.zero_grad()
@@ -155,6 +156,7 @@ def train(args):
 
         print("Epoch: [{:d}], valid_hm_loss: {:.3f}, valid_wh_loss: {:.3f}".format((epoch + 1), valid_hm_loss, valid_wh_loss))
         print('Epoch exec time: {} min'.format((time.time() - epoch_start_time)/60))
+        first_ep = False
 
     print("Training finished.")
     print("Total time cost: {} min.".format((time.time() - start_time)/60))

@@ -8,6 +8,7 @@ from data.abus_data import AbusNpyFormat
 def main(args, root):
     size = (int(640*args.scale),160,int(640*args.scale))
     views = {'cor', 'sag', 'tran'}
+    score_threshold = 0.005
 
     with open(root + 'annotations/rand_all.txt', 'r') as f:
         lines = f.read().splitlines()
@@ -64,10 +65,10 @@ def main(args, root):
                 img = img.convert(mode='RGB')
                 draw = ImageDraw.Draw(img)
                 for bx in boxes:
-                    if bx['score'] < 0.05:
+                    z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], bx['x_bot'], bx['x_top']
+                    if bx['score'] < score_threshold:
                         continue
 
-                    z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], bx['x_bot'], bx['x_top']
                     if int(y_bot) <= i <= int(y_top):
                         draw.rectangle(
                             [(z_bot,x_bot),(z_top,x_top)],
@@ -94,10 +95,10 @@ def main(args, root):
                 img = img.convert(mode='RGB')
                 draw = ImageDraw.Draw(img)
                 for bx in boxes:
-                    if bx['score'] < 0.05:
+                    z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], bx['x_bot'], bx['x_top']
+                    if bx['score'] < score_threshold:
                         continue
 
-                    z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], bx['x_bot'], bx['x_top']
                     if int(x_bot) <= i <= int(x_top):
                         draw.rectangle(
                             [(z_bot,y_bot),(z_top,y_top)],
@@ -124,10 +125,11 @@ def main(args, root):
                 img = img.rotate(angle=-90, expand=True)
                 draw = ImageDraw.Draw(img)
                 for bx in boxes:
-                    if bx['score'] < 0.05:
+                    z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], 640-bx['x_bot'], 640-bx['x_top']
+
+                    if bx['score'] < score_threshold:
                         continue
 
-                    z_bot, z_top, y_bot, y_top, x_bot, x_top =bx['z_bot'], bx['z_top'], bx['y_bot'], bx['y_top'], 640-bx['x_bot'], 640-bx['x_top']
                     if int(z_bot) <= i <= int(z_top):
                         draw.rectangle(
                             [(x_bot,y_bot),(x_top,y_top)],
