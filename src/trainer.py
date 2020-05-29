@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from apex import amp
 from models.networks.hourglass import get_large_hourglass_net
-from models.loss import FocalLoss, RegL1Loss
+from models.loss import FocalLoss, RegL1Loss, RegL2Loss
 from data.abus_data import AbusNpyFormat
 
 use_cuda = torch.cuda.is_available()
@@ -24,8 +24,7 @@ def train(args):
     validset_loader = DataLoader(validset, batch_size=1, shuffle=False, num_workers=0)
 
     crit_hm = FocalLoss()
-    crit_reg = RegL1Loss()
-    crit_wh = crit_reg
+    crit_wh = RegL1Loss()
 
     train_hist = {
         'train_loss':[],
@@ -63,6 +62,7 @@ def train(args):
             param.requires_grad = False
         for param in model.hm.parameters():
             param.requires_grad = False
+        crit_wh = RegL2Loss()
         
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
     optim_sched = ExponentialLR(optimizer, 0.92, last_epoch=-1)

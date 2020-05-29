@@ -4,34 +4,37 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from data.abus_data import AbusNpyFormat
-from utils.postprocess import nms 
+from utils.postprocess import nms, max_in_neighborhood
 from models.networks.hourglass import get_large_hourglass_net
 
-def _get_dilated_range(coord, width, scale=1, dilation=4):
-    center = (dilation*coord + 2) / scale
+def _get_dilated_range(coord, width, dilation=4):
+    center = (dilation*coord + 2)
     return (center - width//2), (center + width//2)
 
-def _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=10, scale=1):
+def _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=10):
     dilation = (640/size[0], 160/size[1], 640/size[2])
     hmax = nms(hm_pred, 11)
     topk_scores, topk_inds = torch.topk(hmax.view(-1), topk)
     print('Top {}-{} predicted score:'.format(len(boxes)+1, len(boxes)+topk), list(map(lambda score: round(score, 3), topk_scores.tolist())))
-    z = topk_inds/(size[1]*size[0])
-    y = (topk_inds % (size[1]*size[0]))/size[2]
-    x = ((topk_inds % (size[1]*size[0])) % size[2])
+    _z = topk_inds/(size[1]*size[0])
+    _y = (topk_inds % (size[1]*size[0]))/size[2]
+    _x = ((topk_inds % (size[1]*size[0])) % size[2])
+
+    wh_pred = max_in_neighborhood(wh_pred, 5)
 
     for i in range(topk_scores.shape[0]):
         # w0, w1, w2 should be stored in 640,160,640
-        w0 = wh_pred[0,0,z[i],y[i],x[i]].to(torch.uint8).item()
-        w1 = wh_pred[0,1,z[i],y[i],x[i]].to(torch.uint8).item()
-        w2 = wh_pred[0,2,z[i],y[i],x[i]].to(torch.uint8).item()
+        z, y, x = _z[i].item(), _y[i].item(), _x[i].item()
+        w0 = wh_pred[0, 0, z, y, x].to(torch.uint8).item()
+        w1 = wh_pred[0, 1, z, y, x].to(torch.uint8).item()
+        w2 = wh_pred[0, 2, z, y, x].to(torch.uint8).item()
 
-        z_bot, z_top = _get_dilated_range(z[i], w0, scale=args.scale, dilation=dilation[0])
-        y_bot, y_top = _get_dilated_range(y[i], w1, dilation=dilation[1])
-        x_bot, x_top = _get_dilated_range(x[i], w2, scale=args.scale, dilation=dilation[2])
-        boxes.append([z_bot.item(), y_bot.item(), x_bot.item(), z_top.item(), y_top.item(), x_top.item(), round(topk_scores[i].item(), 3)])
+        z_bot, z_top = _get_dilated_range(z, w0, dilation=dilation[0])
+        y_bot, y_top = _get_dilated_range(y, w1, dilation=dilation[1])
+        x_bot, x_top = _get_dilated_range(x, w2, dilation=dilation[2])
+        boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item(), 3)])
         # Too lazy to refactor
-        hm_pred[0,0,z[i],y[i],x[i]] = 0
+        # hm_pred[0,0,z[i],y[i],x[i]] = 0
         # hm_pred[0,0,(z[i]+1)%size[0],y[i],x[i]] = 0
         # hm_pred[0,0,z[i]-1,y[i],x[i]] = 0
         # hm_pred[0,0,z[i],(y[i]+1)%size[1],x[i]] = 0
@@ -62,7 +65,7 @@ def _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=10, scale=1):
     return boxes
 
 def main(args):
-    size = (int(160*args.scale), 40, int(160*args.scale))
+    size = (160, 40, 160)
  
     heads = {
         'hm': 1, # 1 channel Probability heat map.
@@ -73,7 +76,7 @@ def main(args):
     model = model.to(device)
     model.eval()
 
-    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=args.fold_num, crx_partition='valid', downsample=args.scale)
+    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=args.fold_num, crx_partition='valid')
     trainset_loader = DataLoader(trainset, batch_size=1, shuffle=False, num_workers=0)
 
     start_time = time.time()
@@ -88,10 +91,10 @@ def main(args):
             hm_pred = output[-1]['hm']
             boxes = []
             # First round
-            boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, scale=args.scale, topk=50)
+            boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=50)
 
             # Second round
-            # boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, scale=args.scale, topk=5)
+            # boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=5)
 
             boxes = np.array(boxes, dtype=float)
             np.save(os.path.join(npy_dir, f_name), boxes)
@@ -110,10 +113,6 @@ def _parse_args():
     parser.add_argument(
         '--fold_num', '-f', type=int, default=4,
         help='Which fold serves as valid set?'
-    )
-    parser.add_argument(
-        '--scale', '-s', type=float, default=1,
-        help='How much were x,z downsampled?'
     )
     return parser.parse_args()
 

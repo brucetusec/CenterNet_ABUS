@@ -10,6 +10,14 @@ def nms(heat, kernel=5):
     return heat * keep
 
 
+def max_in_neighborhood(whmap, kernel=5):
+    pad = (kernel - 1) // 2
+
+    m = nn.MaxPool3d(kernel, stride=1, padding=pad)
+    hmax = m(whmap)
+    return hmax
+
+
 def compute_iou(box1, box2, scale):
     '''
         by Eason Ho

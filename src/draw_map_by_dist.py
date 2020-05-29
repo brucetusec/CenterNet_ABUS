@@ -69,7 +69,11 @@ def main(args):
                 axis[0] = (bx[3] - bx[0]) / scale[0] / 4
                 axis[1] = (bx[4] - bx[1]) / scale[1] / 4
                 axis[2] = (bx[5] - bx[2]) / scale[2] / 4
-                if bx[6] >= score_hit_thre and (bx[4] < 120 and bx[1] > 5):# and not (axis[0] < 2 and axis[1] < 2 and axis[2] < 2):
+                ct = [0,0,0]
+                ct[0] = (bx[3] + bx[0]) / 2
+                ct[1] = (bx[4] + bx[1]) / 2
+                ct[2] = (bx[5] + bx[2]) / 2
+                if bx[6] >= score_hit_thre and (ct[1] < 130 and ct[1] > 3) and (ct[0] < 630 and ct[0] > 10) and (ct[2] < 630 and ct[2] > 10):# and (axis[0]*axis[1]*axis[2] > 1):
                     out_boxes.append(list(bx))
 
             pred_num.append(len(out_boxes))
@@ -95,7 +99,7 @@ def main(args):
             # Small tumor
             out_boxes_s = []
 
-            for bx in box_list:
+            for bx in out_boxes:
                 axis = [0,0,0]
                 axis[0] = (bx[3] - bx[0]) / scale[0] / 4
                 axis[1] = (bx[4] - bx[1]) / scale[1] / 4
