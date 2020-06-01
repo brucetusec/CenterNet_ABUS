@@ -4,6 +4,17 @@ import matplotlib.pyplot as plt
 from utils.postprocess import centroid_distance, eval_precision_recall_by_dist
 from utils.misc import draw_full, build_threshold
 
+def check_boundary(ct):
+    y = (ct[1] > 130 or ct[1] < 3)
+    z = (ct[0] > 630 or ct[0] < 10)
+    x = (ct[2] > 630 or ct[2] < 10)
+    return y or (z and x)
+
+
+def check_size(axis, size):
+    return axis[0]*axis[1]*axis[2] > size
+
+
 def main(args):
     num_npy = os.listdir(npy_dir) # dir is your directory path
     total_pass = len(num_npy)
@@ -73,7 +84,7 @@ def main(args):
                 ct[0] = (bx[3] + bx[0]) / 2
                 ct[1] = (bx[4] + bx[1]) / 2
                 ct[2] = (bx[5] + bx[2]) / 2
-                if bx[6] >= score_hit_thre and (ct[1] < 130 and ct[1] > 3) and (ct[0] < 630 and ct[0] > 10) and (ct[2] < 630 and ct[2] > 10):# and (axis[0]*axis[1]*axis[2] > 1):
+                if bx[6] >= score_hit_thre and not check_boundary(ct) and check_size(axis, 10):
                     out_boxes.append(list(bx))
 
             pred_num.append(len(out_boxes))
