@@ -20,7 +20,7 @@ def _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=10):
     _y = (topk_inds % (size[1]*size[0]))/size[2]
     _x = ((topk_inds % (size[1]*size[0])) % size[2])
 
-    wh_pred = max_in_neighborhood(wh_pred, 5)
+    wh_pred = max_in_neighborhood(wh_pred, 3)
 
     for i in range(topk_scores.shape[0]):
         # w0, w1, w2 should be stored in 640,160,640

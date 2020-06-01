@@ -84,7 +84,7 @@ def main(args):
                 ct[0] = (bx[3] + bx[0]) / 2
                 ct[1] = (bx[4] + bx[1]) / 2
                 ct[2] = (bx[5] + bx[2]) / 2
-                if bx[6] >= score_hit_thre and not check_boundary(ct) and check_size(axis, 10):
+                if bx[6] >= score_hit_thre and not check_boundary(ct) and check_size(axis, 1):
                     out_boxes.append(list(bx))
 
             pred_num.append(len(out_boxes))
