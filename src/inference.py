@@ -11,7 +11,8 @@ def _get_dilated_range(coord, width, dilation=4):
     center = (dilation*coord + 2)
     return (center - width//2), (center + width//2)
 
-def _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=10):
+
+def _get_topk(boxes, hm_pred, size, wh_pred, topk=10):
     dilation = (640/size[0], 160/size[1], 640/size[2])
     hmax = nms(hm_pred, 11)
     topk_scores, topk_inds = torch.topk(hmax.view(-1), topk)
@@ -20,7 +21,7 @@ def _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=10):
     _y = (topk_inds % (size[1]*size[0]))/size[2]
     _x = ((topk_inds % (size[1]*size[0])) % size[2])
 
-    wh_pred = max_in_neighborhood(wh_pred, 3)
+    wh_pred = max_in_neighborhood(wh_pred, kernel=5)
 
     for i in range(topk_scores.shape[0]):
         # w0, w1, w2 should be stored in 640,160,640
@@ -33,36 +34,9 @@ def _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=10):
         y_bot, y_top = _get_dilated_range(y, w1, dilation=dilation[1])
         x_bot, x_top = _get_dilated_range(x, w2, dilation=dilation[2])
         boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item(), 3)])
-        # Too lazy to refactor
-        # hm_pred[0,0,z[i],y[i],x[i]] = 0
-        # hm_pred[0,0,(z[i]+1)%size[0],y[i],x[i]] = 0
-        # hm_pred[0,0,z[i]-1,y[i],x[i]] = 0
-        # hm_pred[0,0,z[i],(y[i]+1)%size[1],x[i]] = 0
-        # hm_pred[0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]] = 0
-        # hm_pred[0,0,z[i]-1,(y[i]+1)%size[1],x[i]] = 0
-        # hm_pred[0,0,z[i],y[i]-1,x[i]] = 0
-        # hm_pred[0,0,(z[i]+1)%size[0],y[i]-1,x[i]] = 0
-        # hm_pred[0,0,z[i]-1,y[i]-1,x[i]] = 0
-        # hm_pred[0,0,z[i],y[i],(x[i]+1)%size[2]] = 0
-        # hm_pred[0,0,(z[i]+1)%size[0],y[i],(x[i]+1)%size[2]] = 0
-        # hm_pred[0,0,z[i]-1,y[i],(x[i]+1)%size[2]] = 0
-        # hm_pred[0,0,z[i],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
-        # hm_pred[0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
-        # hm_pred[0,0,z[i]-1,(y[i]+1)%size[1],(x[i]+1)%size[2]] = 0
-        # hm_pred[0,0,z[i],y[i]-1,(x[i]+1)%size[2]] = 0
-        # hm_pred[0,0,(z[i]+1)%size[0],y[i]-1,(x[i]+1)%size[2]] = 0
-        # hm_pred[0,0,z[i]-1,y[i]-1,(x[i]+1)%size[2]] = 0
-        # hm_pred[0,0,z[i],y[i],x[i]-1] = 0
-        # hm_pred[0,0,(z[i]+1)%size[0],y[i],x[i]-1] = 0
-        # hm_pred[0,0,z[i]-1,y[i],x[i]-1] = 0
-        # hm_pred[0,0,z[i],(y[i]+1)%size[1],x[i]-1] = 0
-        # hm_pred[0,0,(z[i]+1)%size[0],(y[i]+1)%size[1],x[i]-1] = 0
-        # hm_pred[0,0,z[i]-1,(y[i]+1)%size[1],x[i]-1] = 0
-        # hm_pred[0,0,z[i],y[i]-1,x[i]-1] = 0
-        # hm_pred[0,0,(z[i]+1)%size[0],y[i]-1,x[i]-1] = 0
-        # hm_pred[0,0,z[i]-1,y[i]-1,x[i]-1] = 0
     
     return boxes
+
 
 def main(args):
     size = (160, 40, 160)
@@ -91,10 +65,7 @@ def main(args):
             hm_pred = output[-1]['hm']
             boxes = []
             # First round
-            boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=50)
-
-            # Second round
-            # boxes = _get_topk_wipeoff(boxes, hm_pred, size, wh_pred, topk=5)
+            boxes = _get_topk(boxes, hm_pred, size, wh_pred, topk=50)
 
             boxes = np.array(boxes, dtype=float)
             np.save(os.path.join(npy_dir, f_name), boxes)
@@ -115,6 +86,7 @@ def _parse_args():
         help='Which fold serves as valid set?'
     )
     return parser.parse_args()
+
 
 if __name__=='__main__':
     if not torch.cuda.is_available():
