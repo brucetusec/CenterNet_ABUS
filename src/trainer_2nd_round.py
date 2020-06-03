@@ -43,7 +43,7 @@ def train(args):
     init_ep = 0
     end_ep = args.max_epoch
     print('Resume training from the designated checkpoint.')
-    model.load(chkpts_dir, 'f{}_frz'.format(args.crx_valid))
+    model.load(pre_dir, 'f{}_frz'.format(args.crx_valid))
 
     if args.freeze:
         for param in model.pre.parameters():
@@ -170,6 +170,7 @@ if __name__ == '__main__':
     args = _parse_args()
     root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
     chkpts_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'checkpoints/')
+    pre_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pretrained/')
     if not os.path.exists(chkpts_dir):
         os.makedirs(chkpts_dir)
 
