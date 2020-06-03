@@ -5,9 +5,9 @@ from utils.postprocess import centroid_distance, eval_precision_recall_by_dist
 from utils.misc import draw_full, build_threshold
 
 def check_boundary(ct):
-    y = (ct[1] > 130 or ct[1] < 3)
-    z = (ct[0] > 630 or ct[0] < 10)
-    x = (ct[2] > 630 or ct[2] < 10)
+    y = (ct[1] > 130 or ct[1] < 5)
+    z = (ct[0] > 600 or ct[0] < 40)
+    x = (ct[2] > 600 or ct[2] < 40)
     return y or (z and x)
 
 
@@ -84,7 +84,7 @@ def main(args):
                 ct[0] = (bx[3] + bx[0]) / 2
                 ct[1] = (bx[4] + bx[1]) / 2
                 ct[2] = (bx[5] + bx[2]) / 2
-                if bx[6] >= score_hit_thre and not check_boundary(ct) and check_size(axis, 1):
+                if bx[6] >= score_hit_thre and (not check_boundary(ct)) and check_size(axis, 5):
                     out_boxes.append(list(bx))
 
             pred_num.append(len(out_boxes))
@@ -92,11 +92,11 @@ def main(args):
             TP, FP, FN, hits_index, hits_iou, hits_score = eval_precision_recall_by_dist(
                 out_boxes, true_box, 15, scale)
 
-            if FN > 0 and i is 0:
-                print("FN = {}: {}".format(FN, line[0]))
-
             TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 10, scale)
+            
+            if FN_IOU_1 > 0 and i is 0:
+                print("FN = {}: {}".format(FN_IOU_1, line[0]))
 
             TP_table.append(TP)
             FP_table.append(FP)
