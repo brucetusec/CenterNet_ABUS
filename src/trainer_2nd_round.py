@@ -18,8 +18,8 @@ torch.cuda.empty_cache()
 
 def train(args):
     print('Preparing...')
-    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False, downsample=1)
-    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True, downsample=1)
+    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False, include_fp=True)
+    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True, include_fp=True)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     validset_loader = DataLoader(validset, batch_size=1, shuffle=False, num_workers=0)
 
@@ -36,14 +36,24 @@ def train(args):
 
     heads = {
         'hm': 1,
-        'wh': 3
+        'wh': 3,
+        'fp_hm': 1
     }
     model = get_large_hourglass_net(heads, n_stacks=1)
 
     init_ep = 0
     end_ep = args.max_epoch
     print('Resume training from the designated checkpoint.')
-    model.load(pre_dir, 'f{}_frz'.format(args.crx_valid))
+    path = pre_dir + 'hourglass_' + 'f{}_frz'.format(args.crx_valid)
+    pretrained_dict = torch.load(path)
+    model_dict = model.state_dict()
+
+    # 1. filter out unnecessary keys
+    pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+    # 2. overwrite entries in the existing state dict
+    model_dict.update(pretrained_dict) 
+    # 3. load the new state dict
+    model.load_state_dict(model_dict)
 
     if args.freeze:
         for param in model.pre.parameters():
@@ -59,6 +69,8 @@ def train(args):
         for param in model.cnvs_.parameters():
             param.requires_grad = False
         for param in model.wh.parameters():
+            param.requires_grad = False
+        for param in model.hm.parameters():
             param.requires_grad = False
         
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
@@ -89,7 +101,7 @@ def train(args):
                 data_hm = data_hm.cuda()
                 data_wh = data_wh.cuda()
             output = model(data_img)
-            hm_loss = crit_hm(output[-1]['hm'], data_hm)
+            hm_loss = crit_hm(output[-1]['fp_hm'], data_hm)
 
             total_loss = hm_loss
             train_loss += hm_loss.item()
@@ -115,7 +127,7 @@ def train(args):
                     data_hm = data_hm.cuda()
                     data_wh = data_wh.cuda()
                 output = model(data_img)
-                hm_loss = crit_hm(output[-1]['hm'], data_hm)
+                hm_loss = crit_hm(output[-1]['fp_hm'], data_hm)
 
                 valid_hm_loss += hm_loss.item()
 

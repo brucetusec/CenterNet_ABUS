@@ -84,7 +84,7 @@ def main(args):
                 ct[0] = (bx[3] + bx[0]) / 2
                 ct[1] = (bx[4] + bx[1]) / 2
                 ct[2] = (bx[5] + bx[2]) / 2
-                if bx[6] >= score_hit_thre and (not check_boundary(ct)) and check_size(axis, 5):
+                if bx[6] >= score_hit_thre and (not check_boundary(ct)) and check_size(axis, args.threshold):
                     out_boxes.append(list(bx))
 
             pred_num.append(len(out_boxes))
@@ -108,23 +108,12 @@ def main(args):
 
             ##########################################
             # Small tumor
-            out_boxes_s = []
-
-            for bx in out_boxes:
-                axis = [0,0,0]
-                axis[0] = (bx[3] - bx[0]) / scale[0] / 4
-                axis[1] = (bx[4] - bx[1]) / scale[1] / 4
-                axis[2] = (bx[5] - bx[2]) / scale[2] / 4
-                if bx[6] >= score_hit_thre and (axis[0] < 10 and axis[1] < 10 and axis[2] < 10):
-                    out_boxes_s.append(list(bx))
-
-            pred_small_num.append(len(out_boxes_s))
 
             TP_s, FP_s, FN_s, hits_index_s, hits_iou_s, hits_score_s = eval_precision_recall_by_dist(
-                out_boxes_s, true_box_s, 15, scale)
+                out_boxes, true_box_s, 15, scale)
 
             TP_IOU_1_s, FP_IOU_1_s, FN_IOU_1_s, hits_index_IOU_1_s, hits_iou_IOU_1_s, hits_score_IOU_1_s = eval_precision_recall_by_dist(
-                out_boxes_s, true_box_s, 10, scale)
+                out_boxes, true_box_s, 10, scale)
 
             TP_table_s.append(TP_s)
             FP_table_s.append(FP_s)
@@ -234,8 +223,8 @@ def main(args):
 def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--scale', '-s', type=int, default=1,
-        help='How much were x,z downsampled?'
+        '--threshold', '-t', type=float, default=1,
+        help='Threshold for size filtering.'
     )
     return parser.parse_args()
 

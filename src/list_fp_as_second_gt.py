@@ -45,21 +45,20 @@ def main(args):
         for bx in box_list:
             out_boxes.append(list(bx))
 
-        FP, fp_list = pick_fp_by_dist(out_boxes, true_box, 15, scale)
+        FP, fp_list = pick_fp_by_dist(out_boxes, true_box, 50, scale)
         new_lines.append(line[0]+','+line[1]+','+line[2]+','+line[3]+','+' '.join(fp_list)+'\n')
-        print('Number of FPs:', FP)
-        # print(fp_list)
+        print('Number of FPs in {}: {}'.format(line[0], FP))
         print('*************************************************')
 
-    with open(root + 'annotations/fp_all.txt', 'w') as f:
+    with open(root + 'annotations/fp_{}.txt'.format(args.fold), 'w') as f:
         f.writelines(new_lines)
 
 
 def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--scale', '-s', type=int, default=1,
-        help='How much were x,z downsampled?'
+        '--fold', '-f', type=int, required=True,
+        help='Which fold is the target rn?'
     )
     return parser.parse_args()
 

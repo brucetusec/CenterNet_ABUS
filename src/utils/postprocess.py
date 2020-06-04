@@ -139,9 +139,9 @@ def pick_fp_by_dist(pred_BB, true_BB, dist_thresh, scale):
             if dist <= dist_thresh:
                 pred_hits[pred_idx] = 1
         
-        if pred_hits[pred_idx] < 1:
+        if pred_hits[pred_idx] == 0:
             fp_list.append(box_to_string(pred_bb))
 
-    FP = len(pred_hits) - pred_hits.sum()
+    FP = len(pred_BB) - pred_hits.sum()
     
     return int(FP), fp_list
