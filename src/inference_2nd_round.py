@@ -39,7 +39,7 @@ def _get_topk(boxes, hm_pred, size, wh_pred, mask,topk=10):
         if topk_scores[i].item() > 0.1:
             boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item(), 4)])
         else:
-            boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item() * ((1-score_mask)**2), 4)])
+            boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item() * ((1-score_mask**0.25)**2), 4)])
     
     return boxes
 
