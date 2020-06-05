@@ -12,7 +12,7 @@ def _get_dilated_range(coord, width, dilation=4):
     return (center - width//2), (center + width//2)
 
 
-def _get_topk(boxes, hm_pred, size, wh_pred, topk=10):
+def _get_topk(boxes, hm_pred, size, wh_pred, mask,topk=10):
     dilation = (640/size[0], 160/size[1], 640/size[2])
     hmax = nms(hm_pred, 11)
     topk_scores, topk_inds = torch.topk(hmax.view(-1), topk)
@@ -22,6 +22,7 @@ def _get_topk(boxes, hm_pred, size, wh_pred, topk=10):
     _x = ((topk_inds % (size[1]*size[0])) % size[2])
 
     wh_pred = max_in_neighborhood(wh_pred, kernel=3)
+    mask = max_in_neighborhood(mask, kernel=3)
 
     for i in range(topk_scores.shape[0]):
         # w0, w1, w2 should be stored in 640,160,640
@@ -29,11 +30,16 @@ def _get_topk(boxes, hm_pred, size, wh_pred, topk=10):
         w0 = wh_pred[0, 0, z, y, x].to(torch.uint8).item()
         w1 = wh_pred[0, 1, z, y, x].to(torch.uint8).item()
         w2 = wh_pred[0, 2, z, y, x].to(torch.uint8).item()
+        score_mask = mask[0, 0, z, y, x].item()
 
         z_bot, z_top = _get_dilated_range(z, w0, dilation=dilation[0])
         y_bot, y_top = _get_dilated_range(y, w1, dilation=dilation[1])
         x_bot, x_top = _get_dilated_range(x, w2, dilation=dilation[2])
-        boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item(), 3)])
+        print('Score: {}, Mask: {}'.format(topk_scores[i].item(), score_mask))
+        if topk_scores[i].item() > 0.1:
+            boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item(), 4)])
+        else:
+            boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item() * ((1-score_mask)**2), 4)])
     
     return boxes
 
@@ -43,7 +49,8 @@ def main(args):
  
     heads = {
         'hm': 1, # 1 channel Probability heat map.
-        'wh': 3  # 3 channel x,y,z size regression.
+        'wh': 3,  # 3 channel x,y,z size regression.
+        'fp_hm': 1
     }
     model = get_large_hourglass_net(heads, n_stacks=1, debug=False)
     model.load(chkpts_dir, args.epoch)
@@ -63,9 +70,10 @@ def main(args):
             print('Processing: ', f_name)
             wh_pred = torch.abs(output[-1]['wh'])
             hm_pred = output[-1]['hm']
+            fp_mask = output[-1]['fp_hm']
             boxes = []
             # First round
-            boxes = _get_topk(boxes, hm_pred, size, wh_pred, topk=50)
+            boxes = _get_topk(boxes, hm_pred, size, wh_pred, fp_mask, topk=50)
 
             boxes = np.array(boxes, dtype=float)
             np.save(os.path.join(npy_dir, f_name), boxes)

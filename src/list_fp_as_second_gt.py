@@ -29,15 +29,6 @@ def main(args):
         boxes = line[-1].split(' ')
         boxes = list(map(lambda box: box.split(','), boxes))
         true_box = [list(map(float, box)) for box in boxes]
-        true_box_s = []
-        # For the npy volume (after interpolation by spacing), 4px = 1mm
-        for li in true_box:
-            axis = [0,0,0]
-            axis[0] = (li[3] - li[0]) / 4
-            axis[1] = (li[4] - li[1]) / 4
-            axis[2] = (li[5] - li[2]) / 4
-            if axis[0] < 10 and axis[1] < 10 and axis[2] < 10:
-                true_box_s.append(li)
         
         ##########################################
         out_boxes = []
