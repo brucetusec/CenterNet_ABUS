@@ -69,17 +69,15 @@ def train(args):
         train_loss = 0
         current_loss = 0
         valid_hm_loss = 0
-        valid_wh_loss = 0
         epoch_start_time = time.time()
 
         # Training
         model.train()
         optimizer.zero_grad()
-        for batch_idx, (data_img, data_hm, data_wh, _) in enumerate(trainset_loader):
+        for batch_idx, (data_img, data_hm, _, _) in enumerate(trainset_loader):
             if use_cuda:
                 data_img = data_img.cuda()
                 data_hm = data_hm.cuda()
-                data_wh = data_wh.cuda()
             output = model(data_img)
             hm_loss = crit_hm(output[-1]['hm'], data_hm)
 
@@ -101,11 +99,10 @@ def train(args):
         # Validation
         model.eval()
         with torch.no_grad():
-            for batch_idx, (data_img, data_hm, data_wh, _) in enumerate(validset_loader):
+            for batch_idx, (data_img, data_hm, _, _) in enumerate(validset_loader):
                 if use_cuda:
                     data_img = data_img.cuda()
                     data_hm = data_hm.cuda()
-                    data_wh = data_wh.cuda()
                 output = model(data_img)
                 hm_loss = crit_hm(output[-1]['hm'], data_hm)
 

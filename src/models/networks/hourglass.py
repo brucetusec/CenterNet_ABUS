@@ -180,12 +180,12 @@ class kp_module(nn.Module):
             
         self.up1  = make_up_layer(
             3, curr_dim, curr_dim, curr_mod, 
-            layer=residual, **kwargs
+            layer=residual_2D, **kwargs
         )  
         self.max1 = make_pool_layer(curr_dim)
         self.low1 = make_hg_layer(
             3, curr_dim, next_dim, curr_mod,
-            layer=residual, **kwargs
+            layer=residual_2D, **kwargs
         )
         if self.n > 1:
             self.low2 = kp_module(
