@@ -109,19 +109,19 @@ def main(args):
             ##########################################
             # Small tumor
 
-            TP_s, FP_s, FN_s, hits_index_s, hits_iou_s, hits_score_s = eval_precision_recall_by_dist(
-                out_boxes, true_box_s, 15, scale)
+            # TP_s, FP_s, FN_s, hits_index_s, hits_iou_s, hits_score_s = eval_precision_recall_by_dist(
+            #     out_boxes, true_box_s, 15, scale)
 
-            TP_IOU_1_s, FP_IOU_1_s, FN_IOU_1_s, hits_index_IOU_1_s, hits_iou_IOU_1_s, hits_score_IOU_1_s = eval_precision_recall_by_dist(
-                out_boxes, true_box_s, 10, scale)
+            # TP_IOU_1_s, FP_IOU_1_s, FN_IOU_1_s, hits_index_IOU_1_s, hits_iou_IOU_1_s, hits_score_IOU_1_s = eval_precision_recall_by_dist(
+            #     out_boxes, true_box_s, 10, scale)
 
-            TP_table_s.append(TP_s)
-            FP_table_s.append(FP_s)
-            FN_table_s.append(FN_s)
+            # TP_table_s.append(TP_s)
+            # FP_table_s.append(FP_s)
+            # FN_table_s.append(FN_s)
 
-            TP_table_IOU_1_s.append(TP_IOU_1_s)
-            FP_table_IOU_1_s.append(FP_IOU_1_s)
-            FN_table_IOU_1_s.append(FN_IOU_1_s)
+            # TP_table_IOU_1_s.append(TP_IOU_1_s)
+            # FP_table_IOU_1_s.append(FP_IOU_1_s)
+            # FN_table_IOU_1_s.append(FN_IOU_1_s)
         
         TP_table_sum = np.array(TP_table)
         FP_table_sum = np.array(FP_table)
@@ -131,13 +131,13 @@ def main(args):
         FP_table_sum_IOU_1 = np.array(FP_table_IOU_1)
         FN_table_sum_IOU_1 = np.array(FN_table_IOU_1)
 
-        TP_table_sum_s = np.array(TP_table_s)
-        FP_table_sum_s = np.array(FP_table_s)
-        FN_table_sum_s = np.array(FN_table_s)
+        # TP_table_sum_s = np.array(TP_table_s)
+        # FP_table_sum_s = np.array(FP_table_s)
+        # FN_table_sum_s = np.array(FN_table_s)
 
-        TP_table_sum_IOU_1_s = np.array(TP_table_IOU_1_s)
-        FP_table_sum_IOU_1_s = np.array(FP_table_IOU_1_s)
-        FN_table_sum_IOU_1_s = np.array(FN_table_IOU_1_s)
+        # TP_table_sum_IOU_1_s = np.array(TP_table_IOU_1_s)
+        # FP_table_sum_IOU_1_s = np.array(FP_table_IOU_1_s)
+        # FN_table_sum_IOU_1_s = np.array(FN_table_IOU_1_s)
 
         sum_TP, sum_FP, sum_FN = TP_table_sum.sum(), FP_table_sum.sum(), FN_table_sum.sum()
         sensitivity = sum_TP/(sum_TP+sum_FN+1e-10)
@@ -147,13 +147,13 @@ def main(args):
         sensitivity_IOU_1 = sum_TP_IOU_1/(sum_TP_IOU_1+sum_FN_IOU_1+1e-10)
         precision_IOU_1 = sum_TP_IOU_1/(sum_TP_IOU_1+sum_FP_IOU_1+1e-10)
 
-        sum_TP_s, sum_FP_s, sum_FN_s = TP_table_sum_s.sum(), FP_table_sum_s.sum(), FN_table_sum_s.sum()
-        sensitivity_s = sum_TP_s/(sum_TP_s+sum_FN_s+1e-10)
-        precision_s = sum_TP_s/(sum_TP_s+sum_FP_s+1e-10)
+        # sum_TP_s, sum_FP_s, sum_FN_s = TP_table_sum_s.sum(), FP_table_sum_s.sum(), FN_table_sum_s.sum()
+        # sensitivity_s = sum_TP_s/(sum_TP_s+sum_FN_s+1e-10)
+        # precision_s = sum_TP_s/(sum_TP_s+sum_FP_s+1e-10)
 
-        sum_TP_IOU_1_s, sum_FP_IOU_1_s, sum_FN_IOU_1_s = TP_table_sum_IOU_1_s.sum(), FP_table_sum_IOU_1_s.sum(), FN_table_sum_IOU_1_s.sum()
-        sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
-        precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
+        # sum_TP_IOU_1_s, sum_FP_IOU_1_s, sum_FN_IOU_1_s = TP_table_sum_IOU_1_s.sum(), FP_table_sum_IOU_1_s.sum(), FN_table_sum_IOU_1_s.sum()
+        # sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
+        # precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
 
         if sensitivity > 0.125:
             PERF_per_thre.append([
@@ -166,16 +166,16 @@ def main(args):
                 precision_IOU_1,
                 sum_FP_IOU_1/total_pass])
 
-        if sensitivity_s > 0.125:
-            PERF_per_thre_s.append([
-                score_hit_thre,
-                total_pass,
-                sensitivity_s,
-                precision_s,
-                sum_FP_s/total_pass,
-                sensitivity_IOU_1_s,
-                precision_IOU_1_s,
-                sum_FP_IOU_1_s/total_pass])
+        # if sensitivity_s > 0.125:
+        #     PERF_per_thre_s.append([
+        #         score_hit_thre,
+        #         total_pass,
+        #         sensitivity_s,
+        #         precision_s,
+        #         sum_FP_s/total_pass,
+        #         sensitivity_IOU_1_s,
+        #         precision_IOU_1_s,
+        #         sum_FP_IOU_1_s/total_pass])
 
         print('Threshold:{:.3f}'.format(score_hit_thre))
         print('Dist of Center < 15mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity, precision, sum_FP/total_pass))
@@ -198,11 +198,11 @@ def main(args):
         draw_full(data[..., 2], data[..., 3], '#FF0000', 'Dist < 15mm', '-', 1)
         draw_full(data[..., 5], data[..., 6], '#FF6D6C', 'Dist < 10mm', ':', 1)
 
-    if len(data_s) == 0:
-       print('Inference result for small is empty.')
-    else:
-       draw_full(data_s[..., 2], data_s[..., 3], '#0000FF', 'Dist < 15mm', '-', 1)
-       draw_full(data_s[..., 5], data_s[..., 6], '#6D6CFF', 'Dist < 10mm', ':', 1)
+    # if len(data_s) == 0:
+    #    print('Inference result for small is empty.')
+    # else:
+    #    draw_full(data_s[..., 2], data_s[..., 3], '#0000FF', 'Dist < 15mm', '-', 1)
+    #    draw_full(data_s[..., 5], data_s[..., 6], '#6D6CFF', 'Dist < 10mm', ':', 1)
 
     axes = plt.gca()
     axes.set_aspect('auto')
@@ -212,7 +212,7 @@ def main(args):
     axes.set_ylim(0.125, 1.01)
     y_tick = np.arange(0, 1.01, 0.125)
     plt.yticks(y_tick)
-    plt.grid(b=True, which='major', axis='x')
+    plt.grid(b=True, which='major', axis='both')
     plt.legend(loc='lower left')
     plt.ylabel('Precision')
     plt.xlabel('Sensitivity')

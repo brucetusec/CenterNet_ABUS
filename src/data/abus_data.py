@@ -5,7 +5,7 @@ from utils.heatmap import gen_3d_heatmap, gen_3d_hw
 from torch.utils import data
 
 class AbusNpyFormat(data.Dataset):
-    def __init__(self, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False, downsample=1, include_fp=False):
+    def __init__(self, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False, include_fp=False):
         self.root = root
         if include_fp:
             print('FP training mode...')
