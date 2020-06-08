@@ -35,7 +35,7 @@ def main(args):
         for param in model.hm.parameters():
             param.requires_grad = False
 
-    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=0, crx_partition='train', augmentation=True, downsample=1)
+    trainset = AbusNpyFormat(root=root, crx_valid=True, crx_fold_num=0, crx_partition='train', augmentation=True)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     for batch_idx, (data_img, hm_gt, box_gt, _) in enumerate(trainset_loader):
         data_img = data_img.to(device)
