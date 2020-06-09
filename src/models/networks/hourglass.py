@@ -267,7 +267,7 @@ class exkp(BasicModule):
             ) for _ in range(nstack)
         ])
         self.cnvs = nn.ModuleList([
-            make_cnv_layer(curr_dim*2, cnv_dim) for _ in range(nstack)
+            make_cnv_layer(curr_dim, cnv_dim) for _ in range(nstack)
         ])
 
         self.inters = nn.ModuleList([
