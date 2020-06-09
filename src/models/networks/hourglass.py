@@ -33,11 +33,13 @@ class asym_convolution(nn.Module):
         pad = (k - 1) // 2
         self.conv = nn.Conv3d(inp_dim, out_dim, (k, 3, k), padding=(pad, 1, pad), stride=(stride, stride, stride), bias=not with_gn)
         self.relu = nn.ReLU(inplace=True)
+        self.bn   = nn.GroupNorm(16, out_dim) if with_gn else nn.Sequential()
 
     def forward(self, x):
         conv = self.conv(x)
         relu = self.relu(conv)
-        return relu
+        bn = self.bn(relu)
+        return bn
 
 
 class residual(nn.Module):
@@ -45,29 +47,28 @@ class residual(nn.Module):
         super(residual, self).__init__()
 
         pad = (k - 1) // 2
-        self.bn1   = nn.GroupNorm(16, inp_dim)
-        self.relu1 = nn.ReLU(inplace=True)
         self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.bn1   = nn.GroupNorm(16, out_dim)
 
-        self.bn2   = nn.GroupNorm(16, out_dim)
-        self.relu2  = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv3d(out_dim, out_dim, (k, k, k), padding=(pad, pad, pad), bias=False)
+        self.relu2  = nn.ReLU(inplace=True)
+        self.bn2   = nn.GroupNorm(16, out_dim)
 
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
 
     def forward(self, x):
-        bn1   = self.bn1(x)
-        relu1 = self.relu1(bn1)
-        conv1 = self.conv1(relu1)
+        conv1 = self.conv1(x)
+        relu1 = self.relu1(conv1)
+        bn1   = self.bn1(relu1)
 
-        bn2   = self.bn2(conv1)
-        relu2 = self.relu2(bn2)
-        conv2 = self.conv2(relu2)
-
+        conv2 = self.conv2(bn1)
+        bn2   = self.bn2(conv2)
         skip  = self.skip(x)
-        return conv2 + skip
+        relu2 = self.relu2(bn2 + skip)
+        return relu2
 
 
 class residual_2D(nn.Module):
@@ -75,29 +76,28 @@ class residual_2D(nn.Module):
         super(residual_2D, self).__init__()
 
         pad = (k - 1) // 2
-        self.bn1   = nn.GroupNorm(16, inp_dim)
-        self.relu1 = nn.ReLU(inplace=True)
         self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.bn1   = nn.GroupNorm(16, out_dim)
 
-        self.bn2   = nn.GroupNorm(16, out_dim)
-        self.relu2  = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv3d(out_dim, out_dim, (k, 1, k), padding=(pad, 0, pad), bias=False)
+        self.relu2  = nn.ReLU(inplace=True)
+        self.bn2   = nn.GroupNorm(16, out_dim)
 
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
 
     def forward(self, x):
-        bn1   = self.bn1(x)
-        relu1 = self.relu1(bn1)
-        conv1 = self.conv1(relu1)
+        conv1 = self.conv1(x)
+        relu1 = self.relu1(conv1)
+        bn1   = self.bn1(relu1)
 
-        bn2   = self.bn2(conv1)
-        relu2 = self.relu2(bn2)
-        conv2 = self.conv2(relu2)
-
+        conv2 = self.conv2(bn1)
+        bn2   = self.bn2(relu2)
         skip  = self.skip(x)
-        return conv2 + skip
+        relu2 = self.relu2(bn2 + skip)
+        return relu2
 
 
 def make_layer(k, inp_dim, out_dim, modules, layer=convolution, **kwargs):
@@ -122,7 +122,7 @@ class MergeCat(nn.Module):
         return torch.cat((up1, up2), 1)
 
 def make_merge_layer(dim):
-    return MergeCat()
+    return MergeUp()
 
 # def make_pool_layer(dim):
 #     return nn.MaxPool2d(kernel_size=2, stride=2)
@@ -136,7 +136,8 @@ def make_unpool_layer(dim):
 def make_kp_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
         residual(3, cnv_dim, curr_dim, with_gn=True),
-        nn.Conv3d(curr_dim, out_dim, (1, 1, 1))
+        nn.Conv3d(curr_dim, out_dim, (1, 1, 1)),
+        nn.ReLU(inplace=True)
     )
 
 def make_hg_layer(kernel, dim0, dim1, mod, layer=convolution, **kwargs):
@@ -180,12 +181,12 @@ class kp_module(nn.Module):
             
         self.up1  = make_up_layer(
             3, curr_dim, curr_dim, curr_mod, 
-            layer=residual_2D, **kwargs
+            layer=residual, **kwargs
         )  
         self.max1 = make_pool_layer(curr_dim)
         self.low1 = make_hg_layer(
             3, curr_dim, next_dim, curr_mod,
-            layer=residual_2D, **kwargs
+            layer=convolution, **kwargs
         )
         if self.n > 1:
             self.low2 = kp_module(
@@ -201,7 +202,7 @@ class kp_module(nn.Module):
                 **kwargs
             )
             self.low3 = make_hg_layer_revr(
-                3, next_dim*2, curr_dim, next_mod,
+                3, next_dim, curr_dim, next_mod,
                 layer=layer, **kwargs
             )
         else:
@@ -249,7 +250,7 @@ class exkp(BasicModule):
 
         self.pre = nn.Sequential(
             asym_convolution(7, 1, 16, stride=2),
-            residual_2D(3, 16, 32, stride=2)
+            residual(3, 16, 32, stride=2)
         ) if pre is None else pre
 
         self.kps  = nn.ModuleList([
