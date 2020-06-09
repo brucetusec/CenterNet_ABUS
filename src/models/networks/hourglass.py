@@ -155,8 +155,8 @@ def make_hm_layer(cnv_dim, curr_dim, out_dim):
 def make_inter_layer(dim):
     return residual(3, dim, dim)
 
-def make_cnv_layer(inp_dim, out_dim):
-    return convolution(3, inp_dim, out_dim)
+def make_cnv_layer(inp_dim, out_dim, stride=1):
+    return convolution(3, inp_dim, out_dim, stride=stride)
 
 class kp_module(nn.Module):
     def __init__(
@@ -185,8 +185,7 @@ class kp_module(nn.Module):
         )  
         self.max1 = make_pool_layer(curr_dim)
         self.low1 = make_hg_layer(
-            3, curr_dim, next_dim, curr_mod,
-            layer=convolution, **kwargs
+            curr_dim, next_dim, stride=2
         )
         if self.n > 1:
             self.low2 = kp_module(
@@ -349,7 +348,7 @@ class HourglassNet(exkp):
         super(HourglassNet, self).__init__(
             n, num_stacks, dims, modules, heads,
             make_pool_layer=make_pool_layer,
-            make_hg_layer=make_hg_layer,
+            make_hg_layer=make_cnv_layer,
             kp_layer=residual, cnv_dim=32, debug=debug
         )
 
