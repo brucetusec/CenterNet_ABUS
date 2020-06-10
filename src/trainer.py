@@ -18,8 +18,8 @@ torch.cuda.empty_cache()
 
 def train(args):
     print('Preparing...')
-    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False, downsample=1)
-    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True, downsample=1)
+    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False)
+    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     validset_loader = DataLoader(validset, batch_size=1, shuffle=False, num_workers=0)
 

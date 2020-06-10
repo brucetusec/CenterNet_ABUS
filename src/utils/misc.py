@@ -39,7 +39,7 @@ def draw_full(froc_x, froc_y, color, label, linestyle, x_limit):
 def build_threshold():
     thresholds = []
     
-    tmp=0.005
+    tmp=0
     for i in range(0, 395):
         thresholds.append(tmp)
         tmp += 0.0025
