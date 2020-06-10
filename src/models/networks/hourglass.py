@@ -94,7 +94,7 @@ class residual_2D(nn.Module):
         bn1   = self.bn1(relu1)
 
         conv2 = self.conv2(bn1)
-        bn2   = self.bn2(relu2)
+        bn2   = self.bn2(conv2)
         skip  = self.skip(x)
         relu2 = self.relu2(bn2 + skip)
         return relu2
