@@ -23,6 +23,7 @@ def _get_topk(boxes, hm_pred, size, wh_pred, mask,topk=10):
 
     wh_pred = max_in_neighborhood(wh_pred, kernel=3)
     mask = max_in_neighborhood(mask, kernel=3)
+    mmax = torch.max(mask).item()
 
     for i in range(topk_scores.shape[0]):
         # w0, w1, w2 should be stored in 640,160,640
@@ -31,15 +32,20 @@ def _get_topk(boxes, hm_pred, size, wh_pred, mask,topk=10):
         w1 = wh_pred[0, 1, z, y, x].to(torch.uint8).item()
         w2 = wh_pred[0, 2, z, y, x].to(torch.uint8).item()
         score_mask = mask[0, 0, z, y, x].item()
+        score_mask = (1-score_mask**0.5)
+        if score_mask > 0.67:
+            score_mask = 1+score_mask**0.2
+        else:
+            score_mask = score_mask**4
 
         z_bot, z_top = _get_dilated_range(z, w0, dilation=dilation[0])
         y_bot, y_top = _get_dilated_range(y, w1, dilation=dilation[1])
         x_bot, x_top = _get_dilated_range(x, w2, dilation=dilation[2])
-        print('Score: {}, Mask: {}'.format(topk_scores[i].item(), score_mask))
-        if topk_scores[i].item() > 0.1:
-            boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item(), 4)])
+        if topk_scores[i].item() > 0.2:
+            boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, topk_scores[i].item()])
         else:
-            boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, round(topk_scores[i].item() * ((1-score_mask**0.25)**2), 4)])
+            print('Score: {}, Mask: {}'.format(topk_scores[i].item(), score_mask))
+            boxes.append([z_bot, y_bot, x_bot, z_top, y_top, x_top, topk_scores[i].item() * score_mask])
     
     return boxes
 
