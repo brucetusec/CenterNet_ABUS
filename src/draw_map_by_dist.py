@@ -92,9 +92,6 @@ def main(args):
             TP, FP, FN, hits_index, hits_iou, hits_score = eval_precision_recall_by_dist(
                 out_boxes, true_box, 15, scale)
 
-            if FN > 0 and i is 0:
-                print("FN > 0:", line[0])
-
             TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 10, scale)
             
