@@ -102,7 +102,7 @@ def train(args):
             with amp.scale_loss(total_loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
 
-            if  (first_ep and batch_idx < 20) or ((batch_idx % 8) is 0) or (batch_idx == len(trainset_loader) - 1):
+            if  (first_ep and batch_idx < 10) or ((batch_idx % 8) is 0) or (batch_idx == len(trainset_loader) - 1):
                 print('Gradient applied at batch #', batch_idx)
                 optimizer.step()
                 optimizer.zero_grad()
