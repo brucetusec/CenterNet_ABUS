@@ -141,7 +141,7 @@ def train(args):
 
         train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
         train_hist['valid_hm_loss'].append(valid_hm_loss)
-        train_hist['valid_wh_loss'].append(valid_wh_loss)
+        train_hist['valid_wh_loss'].append(args.lambda_s*valid_wh_loss)
         train_hist['valid_total_loss'].append(current_loss)
         train_hist['train_loss'].append(train_loss)
         plt.figure()
@@ -154,7 +154,7 @@ def train(args):
         plt.savefig('loss_fold{}.png'.format(args.crx_valid))
         plt.close()
 
-        print("Epoch: [{:d}], valid_hm_loss: {:.3f}, valid_wh_loss: {:.3f}".format((epoch + 1), valid_hm_loss, valid_wh_loss))
+        print("Epoch: [{:d}], valid_hm_loss: {:.3f}, valid_wh_loss: {:.3f}".format((epoch + 1), valid_hm_loss, args.lambda_s*valid_wh_loss))
         print('Epoch exec time: {} min'.format((time.time() - epoch_start_time)/60))
         first_ep = False
 

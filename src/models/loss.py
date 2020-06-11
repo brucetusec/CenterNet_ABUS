@@ -3,8 +3,8 @@ import torch.nn as nn
 
 def _slow_neg_loss(pred, gt):
     '''focal loss from CornerNet'''
-    pos_inds = gt.gt(0.67)
-    neg_inds = gt.lt(0.67)
+    pos_inds = gt.gt(0.33)
+    neg_inds = gt.lt(0.33)
 
     neg_weights = torch.pow(1 - gt[neg_inds], 4)
 
