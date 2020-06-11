@@ -4,6 +4,17 @@ import matplotlib.pyplot as plt
 from utils.postprocess import centroid_distance, eval_precision_recall_by_dist
 from utils.misc import draw_full, build_threshold
 
+def check_boundary(ct):
+    y = (ct[1] > 130 or ct[1] < 5)
+    z = (ct[0] > 600 or ct[0] < 40)
+    x = (ct[2] > 600 or ct[2] < 40)
+    return y or (z and x)
+
+
+def check_size(axis, size):
+    return axis[0]*axis[1]*axis[2] > size
+
+
 def main(args):
     num_npy = os.listdir(npy_dir) # dir is your directory path
     total_pass = len(num_npy)
@@ -69,7 +80,15 @@ def main(args):
                 axis[0] = (bx[3] - bx[0]) / scale[0] / 4
                 axis[1] = (bx[4] - bx[1]) / scale[1] / 4
                 axis[2] = (bx[5] - bx[2]) / scale[2] / 4
+<<<<<<< HEAD
                 if bx[6] >= score_hit_thre and (axis[0] > 3 and axis[1] > 3 and axis[2] > 3):
+=======
+                ct = [0,0,0]
+                ct[0] = (bx[3] + bx[0]) / 2
+                ct[1] = (bx[4] + bx[1]) / 2
+                ct[2] = (bx[5] + bx[2]) / 2
+                if bx[6] >= score_hit_thre and (not check_boundary(ct)) and check_size(axis, args.threshold):
+>>>>>>> 05b18b1f83a5bffd6f72531b1d91ab922ee6cda7
                     out_boxes.append(list(bx))
 
             pred_num.append(len(out_boxes))
@@ -82,6 +101,9 @@ def main(args):
 
             TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 10, scale)
+            
+            if FN_IOU_1 > 0 and i is 0:
+                print("FN = {}: {}".format(FN_IOU_1, line[0]))
 
             TP_table.append(TP)
             FP_table.append(FP)
@@ -93,31 +115,20 @@ def main(args):
 
             ##########################################
             # Small tumor
-            out_boxes_s = []
 
-            for bx in box_list:
-                axis = [0,0,0]
-                axis[0] = (bx[3] - bx[0]) / scale[0] / 4
-                axis[1] = (bx[4] - bx[1]) / scale[1] / 4
-                axis[2] = (bx[5] - bx[2]) / scale[2] / 4
-                if bx[6] >= score_hit_thre and (axis[0] < 10 and axis[1] < 10 and axis[2] < 10):
-                    out_boxes_s.append(list(bx))
+            # TP_s, FP_s, FN_s, hits_index_s, hits_iou_s, hits_score_s = eval_precision_recall_by_dist(
+            #     out_boxes, true_box_s, 15, scale)
 
-            pred_small_num.append(len(out_boxes_s))
+            # TP_IOU_1_s, FP_IOU_1_s, FN_IOU_1_s, hits_index_IOU_1_s, hits_iou_IOU_1_s, hits_score_IOU_1_s = eval_precision_recall_by_dist(
+            #     out_boxes, true_box_s, 10, scale)
 
-            TP_s, FP_s, FN_s, hits_index_s, hits_iou_s, hits_score_s = eval_precision_recall_by_dist(
-                out_boxes_s, true_box_s, 15, scale)
+            # TP_table_s.append(TP_s)
+            # FP_table_s.append(FP_s)
+            # FN_table_s.append(FN_s)
 
-            TP_IOU_1_s, FP_IOU_1_s, FN_IOU_1_s, hits_index_IOU_1_s, hits_iou_IOU_1_s, hits_score_IOU_1_s = eval_precision_recall_by_dist(
-                out_boxes_s, true_box_s, 10, scale)
-
-            TP_table_s.append(TP_s)
-            FP_table_s.append(FP_s)
-            FN_table_s.append(FN_s)
-
-            TP_table_IOU_1_s.append(TP_IOU_1_s)
-            FP_table_IOU_1_s.append(FP_IOU_1_s)
-            FN_table_IOU_1_s.append(FN_IOU_1_s)
+            # TP_table_IOU_1_s.append(TP_IOU_1_s)
+            # FP_table_IOU_1_s.append(FP_IOU_1_s)
+            # FN_table_IOU_1_s.append(FN_IOU_1_s)
         
         TP_table_sum = np.array(TP_table)
         FP_table_sum = np.array(FP_table)
@@ -127,13 +138,13 @@ def main(args):
         FP_table_sum_IOU_1 = np.array(FP_table_IOU_1)
         FN_table_sum_IOU_1 = np.array(FN_table_IOU_1)
 
-        TP_table_sum_s = np.array(TP_table_s)
-        FP_table_sum_s = np.array(FP_table_s)
-        FN_table_sum_s = np.array(FN_table_s)
+        # TP_table_sum_s = np.array(TP_table_s)
+        # FP_table_sum_s = np.array(FP_table_s)
+        # FN_table_sum_s = np.array(FN_table_s)
 
-        TP_table_sum_IOU_1_s = np.array(TP_table_IOU_1_s)
-        FP_table_sum_IOU_1_s = np.array(FP_table_IOU_1_s)
-        FN_table_sum_IOU_1_s = np.array(FN_table_IOU_1_s)
+        # TP_table_sum_IOU_1_s = np.array(TP_table_IOU_1_s)
+        # FP_table_sum_IOU_1_s = np.array(FP_table_IOU_1_s)
+        # FN_table_sum_IOU_1_s = np.array(FN_table_IOU_1_s)
 
         sum_TP, sum_FP, sum_FN = TP_table_sum.sum(), FP_table_sum.sum(), FN_table_sum.sum()
         sensitivity = sum_TP/(sum_TP+sum_FN+1e-10)
@@ -143,13 +154,13 @@ def main(args):
         sensitivity_IOU_1 = sum_TP_IOU_1/(sum_TP_IOU_1+sum_FN_IOU_1+1e-10)
         precision_IOU_1 = sum_TP_IOU_1/(sum_TP_IOU_1+sum_FP_IOU_1+1e-10)
 
-        sum_TP_s, sum_FP_s, sum_FN_s = TP_table_sum_s.sum(), FP_table_sum_s.sum(), FN_table_sum_s.sum()
-        sensitivity_s = sum_TP_s/(sum_TP_s+sum_FN_s+1e-10)
-        precision_s = sum_TP_s/(sum_TP_s+sum_FP_s+1e-10)
+        # sum_TP_s, sum_FP_s, sum_FN_s = TP_table_sum_s.sum(), FP_table_sum_s.sum(), FN_table_sum_s.sum()
+        # sensitivity_s = sum_TP_s/(sum_TP_s+sum_FN_s+1e-10)
+        # precision_s = sum_TP_s/(sum_TP_s+sum_FP_s+1e-10)
 
-        sum_TP_IOU_1_s, sum_FP_IOU_1_s, sum_FN_IOU_1_s = TP_table_sum_IOU_1_s.sum(), FP_table_sum_IOU_1_s.sum(), FN_table_sum_IOU_1_s.sum()
-        sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
-        precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
+        # sum_TP_IOU_1_s, sum_FP_IOU_1_s, sum_FN_IOU_1_s = TP_table_sum_IOU_1_s.sum(), FP_table_sum_IOU_1_s.sum(), FN_table_sum_IOU_1_s.sum()
+        # sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
+        # precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
 
         if sensitivity > 0.125:
             PERF_per_thre.append([
@@ -162,16 +173,16 @@ def main(args):
                 precision_IOU_1,
                 sum_FP_IOU_1/total_pass])
 
-        if sensitivity_s > 0.125:
-            PERF_per_thre_s.append([
-                score_hit_thre,
-                total_pass,
-                sensitivity_s,
-                precision_s,
-                sum_FP_s/total_pass,
-                sensitivity_IOU_1_s,
-                precision_IOU_1_s,
-                sum_FP_IOU_1_s/total_pass])
+        # if sensitivity_s > 0.125:
+        #     PERF_per_thre_s.append([
+        #         score_hit_thre,
+        #         total_pass,
+        #         sensitivity_s,
+        #         precision_s,
+        #         sum_FP_s/total_pass,
+        #         sensitivity_IOU_1_s,
+        #         precision_IOU_1_s,
+        #         sum_FP_IOU_1_s/total_pass])
 
         print('Threshold:{:.3f}'.format(score_hit_thre))
         print('Dist of Center < 15mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity, precision, sum_FP/total_pass))
@@ -194,11 +205,11 @@ def main(args):
         draw_full(data[..., 2], data[..., 3], '#FF0000', 'Dist < 15mm', '-', 1)
         draw_full(data[..., 5], data[..., 6], '#FF6D6C', 'Dist < 10mm', ':', 1)
 
-    if len(data_s) == 0:
-       print('Inference result for small is empty.')
-    else:
-       draw_full(data_s[..., 2], data_s[..., 3], '#0000FF', 'Dist < 15mm', '-', 1)
-       draw_full(data_s[..., 5], data_s[..., 6], '#6D6CFF', 'Dist < 10mm', ':', 1)
+    # if len(data_s) == 0:
+    #    print('Inference result for small is empty.')
+    # else:
+    #    draw_full(data_s[..., 2], data_s[..., 3], '#0000FF', 'Dist < 15mm', '-', 1)
+    #    draw_full(data_s[..., 5], data_s[..., 6], '#6D6CFF', 'Dist < 10mm', ':', 1)
 
     axes = plt.gca()
     axes.set_aspect('auto')
@@ -208,7 +219,7 @@ def main(args):
     axes.set_ylim(0.125, 1.01)
     y_tick = np.arange(0, 1.01, 0.125)
     plt.yticks(y_tick)
-    plt.grid(b=True, which='major', axis='x')
+    plt.grid(b=True, which='major', axis='both')
     plt.legend(loc='lower left')
     plt.ylabel('Precision')
     plt.xlabel('Sensitivity')
@@ -219,8 +230,8 @@ def main(args):
 def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--scale', '-s', type=int, default=1,
-        help='How much were x,z downsampled?'
+        '--threshold', '-t', type=float, default=1,
+        help='Threshold for size filtering.'
     )
     return parser.parse_args()
 

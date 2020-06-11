@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from apex import amp
 from models.networks.hourglass import get_large_hourglass_net
-from models.loss import FocalLoss, RegL1Loss
+from models.loss import FocalLoss, RegL1Loss, RegL2Loss
 from data.abus_data import AbusNpyFormat
 
 use_cuda = torch.cuda.is_available()
@@ -18,14 +18,13 @@ torch.cuda.empty_cache()
 
 def train(args):
     print('Preparing...')
-    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False, downsample=1)
-    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True, downsample=1)
+    validset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='valid', augmentation=False)
+    trainset = AbusNpyFormat(root, crx_valid=True, crx_fold_num=args.crx_valid, crx_partition='train', augmentation=True)
     trainset_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     validset_loader = DataLoader(validset, batch_size=1, shuffle=False, num_workers=0)
 
     crit_hm = FocalLoss()
-    crit_reg = RegL1Loss()
-    crit_wh = crit_reg
+    crit_wh = RegL2Loss()
 
     train_hist = {
         'train_loss':[],
@@ -42,12 +41,30 @@ def train(args):
     model = get_large_hourglass_net(heads, n_stacks=1)
     if args.resume:
         init_ep = max(0, args.resume_ep)
-        print('Resume training from the latest checkpoint.')
-        model.load(chkpts_dir, 'latest')
+        print('Resume training from the designated checkpoint.')
+        model.load(chkpts_dir, str(args.resume_ep))
     else:
         init_ep = 0
     end_ep = args.max_epoch
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+
+    if args.freeze:
+        for param in model.pre.parameters():
+            param.requires_grad = False
+        for param in model.kps.parameters():
+            param.requires_grad = False
+        for param in model.cnvs.parameters():
+            param.requires_grad = False
+        for param in model.inters.parameters():
+            param.requires_grad = False
+        for param in model.inters_.parameters():
+            param.requires_grad = False
+        for param in model.cnvs_.parameters():
+            param.requires_grad = False
+        for param in model.hm.parameters():
+            param.requires_grad = False
+        crit_wh = RegL1Loss()
+        
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
     optim_sched = ExponentialLR(optimizer, 0.92, last_epoch=-1)
     model.to(device)
     model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
@@ -59,13 +76,14 @@ def train(args):
     start_time = time.time()
     min_loss = 0
 
+    first_ep = True
     for epoch in range(init_ep, end_ep):
         train_loss = 0
         current_loss = 0
         valid_hm_loss = 0
         valid_wh_loss = 0
         epoch_start_time = time.time()
-        lambda_s = args.lambda_s * (1.03**epoch)
+        lambda_s = args.lambda_s # * (1.03**epoch)
 
         # Training
         model.train()
@@ -76,16 +94,15 @@ def train(args):
                 data_hm = data_hm.cuda()
                 data_wh = data_wh.cuda()
             output = model(data_img)
-            wh_pred = torch.abs(output[-1]['wh'])
             hm_loss = crit_hm(output[-1]['hm'], data_hm)
-            wh_loss = crit_wh(wh_pred, data_wh)
+            wh_loss = crit_wh(output[-1]['wh'], data_wh)
 
             total_loss = hm_loss + lambda_s*wh_loss
             train_loss += (hm_loss.item() + args.lambda_s*wh_loss.item())
             with amp.scale_loss(total_loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
 
-            if  (epoch is 0 and batch_idx < 20) or ((batch_idx % 8) is 0) or (batch_idx == len(trainset_loader) - 1):
+            if  (first_ep and batch_idx < 20) or ((batch_idx % 8) is 0) or (batch_idx == len(trainset_loader) - 1):
                 print('Gradient applied at batch #', batch_idx)
                 optimizer.step()
                 optimizer.zero_grad()
@@ -104,9 +121,8 @@ def train(args):
                     data_hm = data_hm.cuda()
                     data_wh = data_wh.cuda()
                 output = model(data_img)
-                wh_pred = torch.abs(output[-1]['wh'])
                 hm_loss = crit_hm(output[-1]['hm'], data_hm)
-                wh_loss = crit_wh(wh_pred, data_wh)
+                wh_loss = crit_wh(output[-1]['wh'], data_wh)
 
                 valid_hm_loss += hm_loss.item()
                 valid_wh_loss += wh_loss.item()
@@ -140,6 +156,7 @@ def train(args):
 
         print("Epoch: [{:d}], valid_hm_loss: {:.3f}, valid_wh_loss: {:.3f}".format((epoch + 1), valid_hm_loss, valid_wh_loss))
         print('Epoch exec time: {} min'.format((time.time() - epoch_start_time)/60))
+        first_ep = False
 
     print("Training finished.")
     print("Total time cost: {} min.".format((time.time() - start_time)/60))
@@ -154,6 +171,9 @@ def _parse_args():
     parser.add_argument('--lambda_s', type=float, default=0.1)
     parser.add_argument('--resume', type=bool, default=False)
     parser.add_argument('--resume_ep', type=int, default=0)
+    parser.add_argument('--freeze', dest='freeze', action='store_true')
+    parser.add_argument('--no-freeze', dest='freeze', action='store_false')
+    parser.set_defaults(freeze=False)
     return parser.parse_args()
 
 if __name__ == '__main__':

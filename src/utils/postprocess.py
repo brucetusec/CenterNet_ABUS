@@ -1,13 +1,21 @@
 import numpy as np
 import torch.nn as nn
 
-def nms(heat, kernel=3):
+def nms(heat, kernel=5):
     pad = (kernel - 1) // 2
 
     m = nn.MaxPool3d(kernel, stride=1, padding=pad)
     hmax = m(heat)
     keep = (hmax == heat).float()
     return heat * keep
+
+
+def max_in_neighborhood(whmap, kernel=5):
+    pad = (kernel - 1) // 2
+
+    m = nn.MaxPool3d(kernel, stride=1, padding=pad)
+    hmax = m(whmap)
+    return hmax
 
 
 def compute_iou(box1, box2, scale):
@@ -131,9 +139,9 @@ def pick_fp_by_dist(pred_BB, true_BB, dist_thresh, scale):
             if dist <= dist_thresh:
                 pred_hits[pred_idx] = 1
         
-        if pred_hits[pred_idx] < 1:
+        if pred_hits[pred_idx] == 0:
             fp_list.append(box_to_string(pred_bb))
 
-    FP = len(pred_hits) - pred_hits.sum()
+    FP = len(pred_BB) - pred_hits.sum()
     
     return int(FP), fp_list

@@ -6,7 +6,7 @@ def _slow_neg_loss(pred, gt):
     pos_inds = gt.gt(0.67)
     neg_inds = gt.lt(0.67)
 
-    neg_weights = torch.pow(1 - gt[neg_inds], 4)
+    neg_weights = torch.pow(1 - gt[neg_inds], 2)
 
     loss = 0
     pos_pred = pred[pos_inds]
@@ -104,11 +104,39 @@ class RegL1Loss(nn.Module):
         super(RegL1Loss, self).__init__()
 
     def forward(self, pred, target):
-        # ones = torch.ones(pred.shape).cuda()
-        # zeros = torch.zeros(pred.shape).cuda()
-        # mask = torch.where(target > 0, ones, zeros)
+        foreground_mask = target.gt(0).cuda()
+        background_mask = ~foreground_mask
         
+<<<<<<< HEAD
         # loss = nn.SmoothL1Loss(reduction='mean')
         loss = nn.MSELoss(reduction='mean')
         out = loss(pred, target)
         return out
+=======
+        loss = nn.SmoothL1Loss(reduction='sum')
+
+        fore_loss = loss(pred*foreground_mask, target*foreground_mask) / (foreground_mask.sum())
+        back_loss = loss(pred*background_mask, target*background_mask) / (background_mask.sum())
+        
+        return 0.0005*back_loss + fore_loss
+
+class RegL2Loss(nn.Module):
+    '''
+    Arguments:
+        output (batch x c x z x y x x)
+        target (batch x c x z x y x x)
+    '''
+    def __init__(self):
+        super(RegL2Loss, self).__init__()
+
+    def forward(self, pred, target):
+        foreground_mask = target.gt(0).cuda()
+        background_mask = ~foreground_mask
+        
+        loss = nn.MSELoss(reduction='sum')
+
+        fore_loss = loss(pred*foreground_mask, target*foreground_mask) / (foreground_mask.sum())
+        back_loss = loss(pred*background_mask, target*background_mask) / (background_mask.sum())
+        
+        return 0.0005*back_loss + fore_loss
+>>>>>>> 05b18b1f83a5bffd6f72531b1d91ab922ee6cda7

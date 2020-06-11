@@ -5,11 +5,16 @@ from utils.heatmap import gen_3d_heatmap, gen_3d_hw
 from torch.utils import data
 
 class AbusNpyFormat(data.Dataset):
-    def __init__(self, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False, downsample=1, include_fp=False):
-        self.include_fp = include_fp
+    def __init__(self, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False, include_fp=False):
         self.root = root
-        with open(self.root + 'annotations/rand_all.txt', 'r') as f:
-            lines = f.read().splitlines()
+        if include_fp:
+            print('FP training mode...')
+            with open(self.root + 'annotations/fp_{}.txt'.format(crx_fold_num), 'r') as f:
+                lines = f.read().splitlines()
+        else:
+            print('Normal mode....')
+            with open(self.root + 'annotations/rand_all.txt', 'r') as f:
+                lines = f.read().splitlines()
 
         folds = []
         self.gt = []      
@@ -27,45 +32,17 @@ class AbusNpyFormat(data.Dataset):
             elif crx_partition == 'valid':
                 self.gt = cut_set
             else:
-                print('Use train set as default.')
                 for li in folds:
                     self.gt += li
         else:
             self.gt = lines
 
-        if self.include_fp:
-            with open(self.root + 'annotations/fp_all.txt', 'r') as f:
-                fp_lines = f.read().splitlines()
-
-            folds = []
-            self.fp_gt = []      
-            if crx_valid:
-                for fi in range(5):
-                    if fi == 4:
-                        folds.append(fp_lines[int(fi*0.2*len(fp_lines)):])
-                    else:
-                        folds.append(fp_lines[int(fi*0.2*len(fp_lines)):int((fi+1)*0.2*len(fp_lines))])
-
-                cut_set = folds.pop(crx_fold_num)
-                if crx_partition == 'train':
-                    for li in folds:
-                        self.fp_gt += li
-                elif crx_partition == 'valid':
-                    self.fp_gt = cut_set
-                else:
-                    print('Use train set as default.')
-                    for li in folds:
-                        self.fp_gt += li
-            else:
-                self.fp_gt = fp_lines
-
         self.set_size = len(self.gt)
         self.aug = augmentation
-        self.downsample = downsample
-        self.img_size = (int(640*downsample),160,int(640*downsample))
+        self.img_size = (640,160,640)
 
-        print('Dataset info: Cross-validation {}, partition: {}, fold number {}, data augmentation {}, downsample {}'\
-            .format(crx_valid, crx_partition, crx_fold_num, self.aug, downsample))
+        print('Dataset info: Cross-validation {}, partition: {}, fold number {}, data augmentation {}'\
+            .format(crx_valid, crx_partition, crx_fold_num, self.aug))
 
 
     def __getitem__(self, index):
@@ -92,37 +69,19 @@ class AbusNpyFormat(data.Dataset):
         true_boxes = [list(map(int, box)) for box in true_boxes]
 
         data, boxes = self._flipTensor(ori_data, true_boxes, gt_scale, aug_mode = aug_mode)
+        # for box in boxes:
+        #     if box['z_bot'] <= 0 or box['x_bot'] <= 0:
+        #         print("A box is out of bound...")
 
-        ############################
-        if self.include_fp:
-            line = self.fp_gt[index]
-            line = line.split(',', 4)
-        
-            fp_boxes = line[-1].split(' ')
-            fp_boxes = list(map(lambda box: box.split(','), fp_boxes))
-            fp_boxes = [list(map(int, box)) for box in fp_boxes]
-
-            _, fp_boxes = self._flipTensor(ori_data, fp_boxes, gt_scale, aug_mode = aug_mode)
-            for box in fp_boxes:
-                if box['z_bot'] <= 0 or box['x_bot'] <= 0:
-                    print(box)
-
-            fp_hm = gen_3d_heatmap(self.img_size, boxes, scale, downscale=self.downsample)
-            fp_hm = torch.from_numpy(fp_hm).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
-
-
-        hm = gen_3d_heatmap(self.img_size, boxes, scale, downscale=self.downsample)
+        hm = gen_3d_heatmap(self.img_size, boxes, scale)
         hm = torch.from_numpy(hm).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
 
-        wh_x, wh_y, wh_z = gen_3d_hw(self.img_size, boxes, scale, downscale=self.downsample)
+        wh_x, wh_y, wh_z = gen_3d_hw(self.img_size, boxes, scale)
         wh_x = torch.from_numpy(wh_x).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
         wh_y = torch.from_numpy(wh_y).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
         wh_z = torch.from_numpy(wh_z).view(1, self.img_size[0]//scale[0], self.img_size[1]//scale[1], self.img_size[2]//scale[2]).to(torch.float32)
 
-        if self.include_fp:
-            return data, hm, torch.cat((wh_z, wh_y, wh_x), dim=0), [boxes,index], fp_hm
-        else:
-            return data, hm, torch.cat((wh_z, wh_y, wh_x), dim=0), [boxes,index]
+        return data, hm, torch.cat((wh_z, wh_y, wh_x), dim=0), [boxes,index]
 
 
     def __len__(self):

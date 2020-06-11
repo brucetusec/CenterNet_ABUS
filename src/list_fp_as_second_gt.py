@@ -29,15 +29,6 @@ def main(args):
         boxes = line[-1].split(' ')
         boxes = list(map(lambda box: box.split(','), boxes))
         true_box = [list(map(float, box)) for box in boxes]
-        true_box_s = []
-        # For the npy volume (after interpolation by spacing), 4px = 1mm
-        for li in true_box:
-            axis = [0,0,0]
-            axis[0] = (li[3] - li[0]) / 4
-            axis[1] = (li[4] - li[1]) / 4
-            axis[2] = (li[5] - li[2]) / 4
-            if axis[0] < 10 and axis[1] < 10 and axis[2] < 10:
-                true_box_s.append(li)
         
         ##########################################
         out_boxes = []
@@ -45,21 +36,20 @@ def main(args):
         for bx in box_list:
             out_boxes.append(list(bx))
 
-        FP, fp_list = pick_fp_by_dist(out_boxes, true_box, 15, scale)
+        FP, fp_list = pick_fp_by_dist(out_boxes, true_box, 50, scale)
         new_lines.append(line[0]+','+line[1]+','+line[2]+','+line[3]+','+' '.join(fp_list)+'\n')
-        print('Number of FPs:', FP)
-        # print(fp_list)
+        print('Number of FPs in {}: {}'.format(line[0], FP))
         print('*************************************************')
 
-    with open(root + 'annotations/fp_all.txt', 'w') as f:
+    with open(root + 'annotations/fp_{}.txt'.format(args.fold), 'w') as f:
         f.writelines(new_lines)
 
 
 def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--scale', '-s', type=int, default=1,
-        help='How much were x,z downsampled?'
+        '--fold', '-f', type=int, required=True,
+        help='Which fold is the target rn?'
     )
     return parser.parse_args()
 
