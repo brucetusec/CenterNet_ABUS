@@ -80,15 +80,11 @@ def main(args):
                 axis[0] = (bx[3] - bx[0]) / scale[0] / 4
                 axis[1] = (bx[4] - bx[1]) / scale[1] / 4
                 axis[2] = (bx[5] - bx[2]) / scale[2] / 4
-<<<<<<< HEAD
-                if bx[6] >= score_hit_thre and (axis[0] > 3 and axis[1] > 3 and axis[2] > 3):
-=======
                 ct = [0,0,0]
                 ct[0] = (bx[3] + bx[0]) / 2
                 ct[1] = (bx[4] + bx[1]) / 2
                 ct[2] = (bx[5] + bx[2]) / 2
                 if bx[6] >= score_hit_thre and (not check_boundary(ct)) and check_size(axis, args.threshold):
->>>>>>> 05b18b1f83a5bffd6f72531b1d91ab922ee6cda7
                     out_boxes.append(list(bx))
 
             pred_num.append(len(out_boxes))

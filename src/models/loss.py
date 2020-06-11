@@ -107,12 +107,6 @@ class RegL1Loss(nn.Module):
         foreground_mask = target.gt(0).cuda()
         background_mask = ~foreground_mask
         
-<<<<<<< HEAD
-        # loss = nn.SmoothL1Loss(reduction='mean')
-        loss = nn.MSELoss(reduction='mean')
-        out = loss(pred, target)
-        return out
-=======
         loss = nn.SmoothL1Loss(reduction='sum')
 
         fore_loss = loss(pred*foreground_mask, target*foreground_mask) / (foreground_mask.sum())
@@ -139,4 +133,3 @@ class RegL2Loss(nn.Module):
         back_loss = loss(pred*background_mask, target*background_mask) / (background_mask.sum())
         
         return 0.0005*back_loss + fore_loss
->>>>>>> 05b18b1f83a5bffd6f72531b1d91ab922ee6cda7
