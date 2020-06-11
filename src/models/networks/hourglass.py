@@ -47,28 +47,30 @@ class residual(nn.Module):
         super(residual, self).__init__()
 
         pad = (k - 1) // 2
+        self.relu = nn.ReLU(inplace=True)
+
         self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
-        self.relu1 = nn.ReLU(inplace=True)
         self.bn1   = nn.GroupNorm(16, out_dim)
 
         self.conv2 = nn.Conv3d(out_dim, out_dim, (k, k, k), padding=(pad, pad, pad), bias=False)
-        self.relu2  = nn.ReLU(inplace=True)
         self.bn2   = nn.GroupNorm(16, out_dim)
 
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
+            nn.GroupNorm(16, out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
 
     def forward(self, x):
         conv1 = self.conv1(x)
-        relu1 = self.relu1(conv1)
-        bn1   = self.bn1(relu1)
+        bn1   = self.bn1(conv1)
+        relu1 = self.relu(bn1)
 
-        conv2 = self.conv2(bn1)
+        conv2 = self.conv2(relu1)
         bn2   = self.bn2(conv2)
+        relu2 = self.relu(bn2)
         skip  = self.skip(x)
-        relu2 = self.relu2(bn2 + skip)
-        return relu2
+        relu3 = self.relu(relu2 + skip)
+        return relu3
 
 
 class residual_2D(nn.Module):
@@ -76,28 +78,30 @@ class residual_2D(nn.Module):
         super(residual_2D, self).__init__()
 
         pad = (k - 1) // 2
+        self.relu = nn.ReLU(inplace=True)
+
         self.conv1 = nn.Conv3d(inp_dim, out_dim, (k, k, k), padding=(pad, pad, pad), stride=(stride, stride, stride), bias=not with_gn)
-        self.relu1 = nn.ReLU(inplace=True)
         self.bn1   = nn.GroupNorm(16, out_dim)
 
         self.conv2 = nn.Conv3d(out_dim, out_dim, (k, 1, k), padding=(pad, 0, pad), bias=False)
-        self.relu2  = nn.ReLU(inplace=True)
         self.bn2   = nn.GroupNorm(16, out_dim)
 
         self.skip  = nn.Sequential(
             nn.Conv3d(inp_dim, out_dim, (1, 1, 1), stride=(stride, stride, stride), bias=False),
+            nn.GroupNorm(16, out_dim)
         ) if stride != 1 or inp_dim != out_dim else nn.Sequential()
 
     def forward(self, x):
         conv1 = self.conv1(x)
-        relu1 = self.relu1(conv1)
-        bn1   = self.bn1(relu1)
+        bn1   = self.bn1(conv1)
+        relu1 = self.relu(bn1)
 
-        conv2 = self.conv2(bn1)
+        conv2 = self.conv2(relu1)
         bn2   = self.bn2(conv2)
+        relu2 = self.relu(bn2)
         skip  = self.skip(x)
-        relu2 = self.relu2(bn2 + skip)
-        return relu2
+        relu3 = self.relu(relu2 + skip)
+        return relu3
 
 
 def make_layer(k, inp_dim, out_dim, modules, layer=convolution, **kwargs):
