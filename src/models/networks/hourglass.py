@@ -145,7 +145,7 @@ class MergeCat(nn.Module):
         return torch.cat((up1, up2), 1)
 
 def make_merge_layer(dim):
-    return MergeCat()
+    return MergeUp()
 
 # def make_pool_layer(dim):
 #     return nn.MaxPool2d(kernel_size=2, stride=2)
@@ -160,7 +160,6 @@ def make_kp_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
         residual(3, cnv_dim, curr_dim, with_gn=True),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1)),
-        nn.GroupNorm(16, out_dim),
         nn.ReLU(inplace=True)
     )
 
@@ -173,8 +172,6 @@ def make_hm_layer(cnv_dim, curr_dim, out_dim):
     return nn.Sequential(
         residual(3, cnv_dim, curr_dim, with_gn=True),
         nn.Conv3d(curr_dim, out_dim, (1, 1, 1)),
-        nn.GroupNorm(16, out_dim),
-        nn.ReLU(inplace=True),
         nn.Sigmoid()
     )
 
@@ -204,13 +201,14 @@ class kp_module(nn.Module):
 
         curr_dim = dims[0]
         next_dim = dims[1]
-            
-        self.up1  = make_up_layer(
-            3, curr_dim, curr_dim, curr_mod, 
-            layer=residual_2D, **kwargs
-        )  
+
+        self.up1  = residual_2D(3, curr_dim, curr_dim)
+        # self.up1  = make_up_layer(
+        #     3, curr_dim, curr_dim, curr_mod, 
+        #     layer=residual_2D, **kwargs
+        # )  
         self.max1 = make_pool_layer(curr_dim)
-        self.low1 = convolution(3, curr_dim, next_dim)
+        self.low1 = convolution(3, curr_dim, next_dim, stride=2)
         # self.low1 = make_hg_layer(
         #     3, curr_dim, next_dim, curr_mod,
         #     layer=residual_2D, **kwargs
@@ -228,19 +226,22 @@ class kp_module(nn.Module):
                 debug=debug,
                 **kwargs
             )
-            self.low3 = make_hg_layer_revr(
-                3, next_dim*2, curr_dim, next_mod,
-                layer=layer, **kwargs
-            )
+            self.low3 = residual(3, next_dim, curr_dim)
+            # self.low3 = make_hg_layer_revr(
+            #     3, next_dim, curr_dim, next_mod,
+            #     layer=layer, **kwargs
+            # )
         else:
-            self.low2 = make_low_layer(
-                3, next_dim, next_dim, next_mod,
-                layer=layer, **kwargs
-            )
-            self.low3 = make_hg_layer_revr(
-                3, next_dim, curr_dim, next_mod,
-                layer=layer, **kwargs
-            )
+            self.low2 = residual(3, next_dim, next_dim)
+            # self.low2 = make_low_layer(
+            #     3, next_dim, next_dim, next_mod,
+            #     layer=layer, **kwargs
+            # )
+            self.low3 = residual(3, next_dim, curr_dim)
+            # self.low3 = make_hg_layer_revr(
+            #     3, next_dim, curr_dim, next_mod,
+            #     layer=layer, **kwargs
+            # )
 
         self.up2  = make_unpool_layer(curr_dim)
 
@@ -294,7 +295,7 @@ class exkp(BasicModule):
             ) for _ in range(nstack)
         ])
         self.cnvs = nn.ModuleList([
-            make_cnv_layer(curr_dim*2, cnv_dim) for _ in range(nstack)
+            make_cnv_layer(curr_dim, cnv_dim) for _ in range(nstack)
         ])
 
         self.inters = nn.ModuleList([
