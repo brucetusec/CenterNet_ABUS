@@ -223,7 +223,7 @@ def main(args):
 def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--threshold', '-t', type=float, default=1,
+        '--threshold', type=float, default=0,
         help='Threshold for size filtering.'
     )
     return parser.parse_args()
