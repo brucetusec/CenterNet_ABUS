@@ -76,6 +76,7 @@ def train(args):
     start_time = time.time()
     min_loss = 0
 
+    model.save('initial')
     first_ep = True
     for epoch in range(init_ep, end_ep):
         train_loss = 0
