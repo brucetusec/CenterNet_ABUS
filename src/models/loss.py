@@ -112,7 +112,7 @@ class RegL1Loss(nn.Module):
         fore_loss = loss(pred*foreground_mask, target*foreground_mask) / (foreground_mask.sum())
         back_loss = loss(pred*background_mask, target*background_mask) / (background_mask.sum())
         
-        return 0.0005*back_loss + fore_loss
+        return back_loss + fore_loss
 
 class RegL2Loss(nn.Module):
     '''
@@ -132,4 +132,4 @@ class RegL2Loss(nn.Module):
         fore_loss = loss(pred*foreground_mask, target*foreground_mask) / (foreground_mask.sum())
         back_loss = loss(pred*background_mask, target*background_mask) / (background_mask.sum())
         
-        return 0.0005*back_loss + fore_loss
+        return back_loss + fore_loss
