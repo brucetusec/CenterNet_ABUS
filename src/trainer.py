@@ -40,7 +40,7 @@ def train(args):
     }
     model = get_large_hourglass_net(heads, n_stacks=1)
     if args.resume:
-        init_ep = max(0, args.resume_ep)
+        init_ep = 0
         print('Resume training from the designated checkpoint.')
         model.load(chkpts_dir, str(args.resume_ep))
     else:
@@ -48,6 +48,7 @@ def train(args):
     end_ep = args.max_epoch
 
     if args.freeze:
+        print('Paritially freeze layers.')
         for param in model.pre.parameters():
             param.requires_grad = False
         for param in model.kps.parameters():
@@ -170,10 +171,10 @@ def _parse_args():
     parser.add_argument('--max_epoch', type=int, default=60)
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--lambda_s', type=float, default=0.1)
-    parser.add_argument('--resume', type=bool, default=False)
-    parser.add_argument('--resume_ep', type=int, default=0)
+    parser.add_argument('--resume', dest='resume', action='store_true')
+    parser.add_argument('--resume_ep', type=str, default='0')
     parser.add_argument('--freeze', dest='freeze', action='store_true')
-    parser.add_argument('--no-freeze', dest='freeze', action='store_false')
+    parser.set_defaults(resume=False)
     parser.set_defaults(freeze=False)
     return parser.parse_args()
 
