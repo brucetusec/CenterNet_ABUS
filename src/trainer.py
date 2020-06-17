@@ -66,7 +66,7 @@ def train(args):
         crit_wh = RegL2Loss()
         
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
-    optim_sched = ExponentialLR(optimizer, 0.92, last_epoch=-1)
+    optim_sched = ExponentialLR(optimizer, 0.85, last_epoch=-1)
     model.to(device)
     model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
 
