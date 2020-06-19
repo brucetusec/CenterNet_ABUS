@@ -134,11 +134,12 @@ def train(args):
         train_loss = train_loss/trainset.__len__()
         current_loss = valid_hm_loss + args.lambda_s*valid_wh_loss
 
+        save_id = (args.resume_ep + '_' + str(epoch)) if args.resume else str(epoch)
         if epoch == 0 or current_loss < min_loss:
             min_loss = current_loss
-            model.save(str(epoch))
+            model.save(save_id)
         elif (epoch % 5) == 4:
-            model.save(str(epoch))
+            model.save(save_id)
         model.save('latest')
 
         train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
