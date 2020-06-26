@@ -66,7 +66,7 @@ def train(args):
         crit_wh = RegL2Loss()
         
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
-    optim_sched = ExponentialLR(optimizer, 0.85, last_epoch=-1)
+    optim_sched = ExponentialLR(optimizer, 0.9, last_epoch=-1)
     model.to(device)
     model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
 
@@ -104,7 +104,7 @@ def train(args):
             with amp.scale_loss(total_loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
 
-            if  (first_ep and batch_idx < 20) or ((batch_idx % 8) is 0) or (batch_idx == len(trainset_loader) - 1):
+            if  (first_ep and batch_idx < 10) or ((batch_idx % 8) is 0) or (batch_idx == len(trainset_loader) - 1):
                 print('Gradient applied at batch #', batch_idx)
                 optimizer.step()
                 optimizer.zero_grad()
@@ -167,7 +167,7 @@ def train(args):
 
 def _parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--crx_valid', type=int, default=0)
+    parser.add_argument('--crx_valid', type=int, required=True)
     parser.add_argument('--batch_size', type=int, default=2)
     parser.add_argument('--max_epoch', type=int, default=60)
     parser.add_argument('--lr', type=float, default=1e-5)
