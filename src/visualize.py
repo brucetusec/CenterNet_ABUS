@@ -8,7 +8,7 @@ from data.abus_data import AbusNpyFormat
 def main(args, root):
     size = (int(640*args.scale),160,int(640*args.scale))
     views = {'cor', 'sag', 'tran'}
-    score_threshold = 0.005
+    score_threshold = 0.3
 
     with open(root + 'annotations/rand_all.txt', 'r') as f:
         lines = f.read().splitlines()

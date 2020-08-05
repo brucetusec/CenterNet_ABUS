@@ -1,5 +1,7 @@
 import numpy as np
 import torch.nn as nn
+from operator import add
+from .misc import categorize_by_size
 
 def nms(heat, kernel=5):
     pad = (kernel - 1) // 2
@@ -107,10 +109,11 @@ def eval_precision_recall_by_dist(pred_BB, true_BB, dist_thresh, scale):
     hits_iou = np.zeros(len(true_BB), dtype=float)
     hits_score = np.zeros(len(true_BB), dtype=float)
 
-    for pred_idx, pred_bb in enumerate(pred_BB):
+    # S(<10mm), M(10mm<15mm), L(15mm<)
+    TP_by_size = [0,0,0]
 
-        for gt_idx, gt_roi in enumerate(true_BB):
-            
+    for gt_idx, gt_roi in enumerate(true_BB):
+        for pred_idx, pred_bb in enumerate(pred_BB):
             dist = centroid_distance(pred_bb[:6], gt_roi[:6], scale)
             if dist <= dist_thresh:
                 gt_hits[gt_idx] = 1
@@ -119,10 +122,13 @@ def eval_precision_recall_by_dist(pred_BB, true_BB, dist_thresh, scale):
                 hits_score[gt_idx] = pred_bb[6]
                 pred_hits[pred_idx] = 1
 
+        if gt_hits[gt_idx] == 1:
+            TP_by_size = list(map(add, TP_by_size, categorize_by_size(gt_roi[:6])))
+
     TP = gt_hits.sum()
     FP = len(pred_hits) - pred_hits.sum()
     FN = len(true_BB)-gt_hits.sum()
-    return int(TP), int(FP), int(FN), hits_index, hits_iou, hits_score
+    return int(TP), int(FP), int(FN), hits_index, hits_iou, hits_score, TP_by_size
 
 def box_to_string(bbox):
     separator = ','

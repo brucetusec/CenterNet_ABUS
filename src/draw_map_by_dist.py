@@ -1,7 +1,8 @@
 import os, argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from utils.postprocess import centroid_distance, eval_precision_recall_by_dist
+from operator import add
+from utils.postprocess import centroid_distance, eval_precision_recall_by_dist, eval_precision_recall
 from utils.misc import draw_full, build_threshold
 
 def check_boundary(ct):
@@ -21,7 +22,7 @@ def main(args):
     all_thre=build_threshold()
     PERF_per_thre=[]
     PERF_per_thre_s=[]
-    true_num, true_small_num = 0, 0
+    true_num, true_num_s, true_num_m, true_num_l = 0, 0, 0, 0
 
     for i, score_hit_thre in enumerate(all_thre):
         print('Use threshold: {:.3f}'.format(score_hit_thre))
@@ -33,6 +34,9 @@ def main(args):
         # , score_table, mean_score_table, std_score_table
         TP_table_s, FP_table_s, FN_table_s, \
         TP_table_IOU_1_s, FP_table_IOU_1_s, FN_table_IOU_1_s = [], [], [], [], [], []
+        
+        TP_table_by_size_15 = [0,0,0]
+        TP_table_by_size_10 = [0,0,0]
 
         current_pass = 0
         with open(root + 'annotations/rand_all.txt', 'r') as f:
@@ -55,19 +59,25 @@ def main(args):
             boxes = line[-1].split(' ')
             boxes = list(map(lambda box: box.split(','), boxes))
             true_box = [list(map(float, box)) for box in boxes]
-            true_box_s = []
-            # For the npy volume (after interpolation by spacing), 4px = 1mm
-            for li in true_box:
-                axis = [0,0,0]
-                axis[0] = (li[3] - li[0]) / 4
-                axis[1] = (li[4] - li[1]) / 4
-                axis[2] = (li[5] - li[2]) / 4
-                if axis[0] < 10 and axis[1] < 10 and axis[2] < 10:
-                    true_box_s.append(li)
 
+            # For the npy volume (after interpolation by spacing), 4px = 1mm
+            # Only compute once
             if i == 0:
+                for li in true_box:
+                    axis = [0,0,0]
+                    axis[0] = (li[3] - li[0]) // 4
+                    axis[1] = (li[4] - li[1]) // 4
+                    axis[2] = (li[5] - li[2]) // 4
+                    max_axis = max(axis)
+                    if max_axis <= 10:
+                        true_num_s += 1
+                    elif max_axis >= 15:
+                        true_num_l += 1
+                    else:
+                        true_num_m += 1
+
                 true_num += len(true_box)
-                true_small_num += len(true_box_s)
+                print('S/M/L/All tumors: {}/{}/{}/{}'.format(true_num_s, true_num_m, true_num_l, true_num))
 
             file_name = line[0]
             file_table.append(file_name)
@@ -89,10 +99,10 @@ def main(args):
 
             pred_num.append(len(out_boxes))
 
-            TP, FP, FN, hits_index, hits_iou, hits_score = eval_precision_recall_by_dist(
+            TP, FP, FN, hits_index, hits_iou, hits_score, TP_by_size_15 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 15, scale)
 
-            TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1 = eval_precision_recall_by_dist(
+            TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1, TP_by_size_10 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 10, scale)
             
             if FN_IOU_1 > 0 and i is 0:
@@ -106,22 +116,9 @@ def main(args):
             FP_table_IOU_1.append(FP_IOU_1)
             FN_table_IOU_1.append(FN_IOU_1)
 
+            TP_table_by_size_10 = list(map(add, TP_table_by_size_10, TP_by_size_10))
+            TP_table_by_size_15 = list(map(add, TP_table_by_size_15, TP_by_size_15))
             ##########################################
-            # Small tumor
-
-            # TP_s, FP_s, FN_s, hits_index_s, hits_iou_s, hits_score_s = eval_precision_recall_by_dist(
-            #     out_boxes, true_box_s, 15, scale)
-
-            # TP_IOU_1_s, FP_IOU_1_s, FN_IOU_1_s, hits_index_IOU_1_s, hits_iou_IOU_1_s, hits_score_IOU_1_s = eval_precision_recall_by_dist(
-            #     out_boxes, true_box_s, 10, scale)
-
-            # TP_table_s.append(TP_s)
-            # FP_table_s.append(FP_s)
-            # FN_table_s.append(FN_s)
-
-            # TP_table_IOU_1_s.append(TP_IOU_1_s)
-            # FP_table_IOU_1_s.append(FP_IOU_1_s)
-            # FN_table_IOU_1_s.append(FN_IOU_1_s)
         
         TP_table_sum = np.array(TP_table)
         FP_table_sum = np.array(FP_table)
@@ -131,14 +128,6 @@ def main(args):
         FP_table_sum_IOU_1 = np.array(FP_table_IOU_1)
         FN_table_sum_IOU_1 = np.array(FN_table_IOU_1)
 
-        # TP_table_sum_s = np.array(TP_table_s)
-        # FP_table_sum_s = np.array(FP_table_s)
-        # FN_table_sum_s = np.array(FN_table_s)
-
-        # TP_table_sum_IOU_1_s = np.array(TP_table_IOU_1_s)
-        # FP_table_sum_IOU_1_s = np.array(FP_table_IOU_1_s)
-        # FN_table_sum_IOU_1_s = np.array(FN_table_IOU_1_s)
-
         sum_TP, sum_FP, sum_FN = TP_table_sum.sum(), FP_table_sum.sum(), FN_table_sum.sum()
         sensitivity = sum_TP/(sum_TP+sum_FN+1e-10)
         precision = sum_TP/(sum_TP+sum_FP+1e-10)
@@ -146,14 +135,6 @@ def main(args):
         sum_TP_IOU_1, sum_FP_IOU_1, sum_FN_IOU_1 = TP_table_sum_IOU_1.sum(), FP_table_sum_IOU_1.sum(), FN_table_sum_IOU_1.sum()
         sensitivity_IOU_1 = sum_TP_IOU_1/(sum_TP_IOU_1+sum_FN_IOU_1+1e-10)
         precision_IOU_1 = sum_TP_IOU_1/(sum_TP_IOU_1+sum_FP_IOU_1+1e-10)
-
-        # sum_TP_s, sum_FP_s, sum_FN_s = TP_table_sum_s.sum(), FP_table_sum_s.sum(), FN_table_sum_s.sum()
-        # sensitivity_s = sum_TP_s/(sum_TP_s+sum_FN_s+1e-10)
-        # precision_s = sum_TP_s/(sum_TP_s+sum_FP_s+1e-10)
-
-        # sum_TP_IOU_1_s, sum_FP_IOU_1_s, sum_FN_IOU_1_s = TP_table_sum_IOU_1_s.sum(), FP_table_sum_IOU_1_s.sum(), FN_table_sum_IOU_1_s.sum()
-        # sensitivity_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FN_IOU_1_s+1e-10)
-        # precision_IOU_1_s = sum_TP_IOU_1_s/(sum_TP_IOU_1_s+sum_FP_IOU_1_s+1e-10)
 
         if sensitivity > 0.125:
             PERF_per_thre.append([
@@ -166,37 +147,24 @@ def main(args):
                 precision_IOU_1,
                 sum_FP_IOU_1/total_pass])
 
-        # if sensitivity_s > 0.125:
-        #     PERF_per_thre_s.append([
-        #         score_hit_thre,
-        #         total_pass,
-        #         sensitivity_s,
-        #         precision_s,
-        #         sum_FP_s/total_pass,
-        #         sensitivity_IOU_1_s,
-        #         precision_IOU_1_s,
-        #         sum_FP_IOU_1_s/total_pass])
-
         print('Threshold:{:.3f}'.format(score_hit_thre))
-        print('Dist of Center < 15mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity, precision, sum_FP/total_pass))
-        print('Dist of Center < 10mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity_IOU_1, precision_IOU_1, sum_FP_IOU_1/total_pass))
+        print(TP_table_by_size_10, TP_table_by_size_15)
+        print('Dist of Center < 15mm Sen:{:.3f}, Sen_s:{:.3f}, Sen_m:{:.3f}, Sen_l:{:.3f}, FP per pass:{:.3f}'\
+            .format(sensitivity, TP_table_by_size_15[0]/true_num_s, TP_table_by_size_15[1]/true_num_m, TP_table_by_size_15[2]/true_num_l, sum_FP/total_pass))
+        print('Dist of Center < 10mm Sen:{:.3f}, Sen_s:{:.3f}, Sen_m:{:.3f}, Sen_l:{:.3f}, FP per pass:{:.3f}'\
+            .format(sensitivity_IOU_1, TP_table_by_size_10[0]/true_num_s, TP_table_by_size_10[1]/true_num_m, TP_table_by_size_10[2]/true_num_l, sum_FP_IOU_1/total_pass))
         print('\n')
-
-    print('Small/All tumors: {}/{}'.format(true_small_num, true_num))
 
     data = np.array(PERF_per_thre)
     data_s = np.array(PERF_per_thre_s)
 
-    font = {'family': 'Times New Roman',
-            'size': 9}
-
-    plt.rc('font', **font)
+    plt.rc('font',family='Times New Roman')
 
     if len(data) == 0:
         print('Inference result is empty.')
     else:
-        draw_full(data[..., 2], data[..., 3], '#FF0000', 'Dist < 15mm', '-', 1)
-        draw_full(data[..., 5], data[..., 6], '#FF6D6C', 'Dist < 10mm', ':', 1)
+        draw_full(data[..., 5], data[..., 6], '#FF6D6C', 'D < 10mm', ':', 1)
+        draw_full(data[..., 2], data[..., 3], '#FF0000', 'D < 15mm', '-', 1)
 
     # if len(data_s) == 0:
     #    print('Inference result for small is empty.')
@@ -204,15 +172,18 @@ def main(args):
     #    draw_full(data_s[..., 2], data_s[..., 3], '#0000FF', 'Dist < 15mm', '-', 1)
     #    draw_full(data_s[..., 5], data_s[..., 6], '#6D6CFF', 'Dist < 10mm', ':', 1)
 
-    axes = plt.gca()
-    axes.set_aspect('auto')
-    axes.set_xlim(0.125, 1.0)
-    x_tick = np.arange(0, 1, 0.1)
+    # axes = plt.gca()
+    # axes.set_aspect('auto')
+    # axes.set_xlim(0.125, 1.0)
+    plt.xlim(0.5, 1)
+    x_tick = np.arange(0.5, 1, 0.1)
+    x_tick = np.append(x_tick, [0.95, 0.98])
+    x_tick = np.sort(x_tick)
     plt.xticks(x_tick)
-    axes.set_ylim(0.125, 1.01)
+    # axes.set_ylim(0.125, 1.01)
     y_tick = np.arange(0, 1.01, 0.125)
     plt.yticks(y_tick)
-    plt.grid(b=True, which='major', axis='both')
+    # plt.grid(b=True, which='major', axis='both')
     plt.legend(loc='lower left')
     plt.ylabel('Precision')
     plt.xlabel('Sensitivity')
