@@ -35,7 +35,7 @@ def draw_slice(volume, gt, dir, label=None):
         img.save(os.path.join(dir ,(str(i)+'.png')))
 
 def main(args):
-    all_data = AbusNpyFormat(root, crx_valid=False, augmentation=False, include_fp=True)
+    all_data = AbusNpyFormat(root, crx_valid=False, augmentation=False, include_fp=False)
     data, hm, wh, label = all_data.__getitem__(args.index)
     print('Dataset size:', all_data.__len__())
     print('Shape of data:', data.shape, hm.shape, wh.shape)

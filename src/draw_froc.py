@@ -89,10 +89,10 @@ def main(args):
 
             pred_num.append(len(out_boxes))
 
-            TP, FP, FN, hits_index, hits_iou, hits_score = eval_precision_recall_by_dist(
+            TP, FP, FN, hits_index, hits_iou, hits_score, TP_by_size_15 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 15, scale)
 
-            TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1 = eval_precision_recall_by_dist(
+            TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1, TP_by_size_10 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 10, scale)
             
             if FN_IOU_1 > 0 and i is 0:
