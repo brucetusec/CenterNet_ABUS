@@ -2,28 +2,28 @@
 This project is the implementation of Tien-Yi Chi's master thesis "A Center Key-point Deep Convolutional Neural Network
 of Tumor Detection for Automated Breast Ultrasound Image".
 ### Directories
-#### data
++ data
 Contains numpy images and ground truth bounding box info. Please download "sys_ucc" folder from test_data in CAD and place it here.
-#### history
++ history
 Stores results from the experiments in the past.
-#### results
++ results
 Stores results produced by inference.py of the current version.
-#### src
++ src
 Source code.
-#### visualization
++ visualization
 Stores images in 3 different views with boxes drawn on them.
 
 ---
 
 ### In the folder src:
 All python operations were executed here; for example, `python inference.py -f 0 -e 10`. The most important ones are trainer.py, inference.py, draw_froc.py, draw_map_by_dist.py, and visualize.py.
-#### data
++ data
 Contains dataset class.
-#### models
++ models
 Contains network and loss classes.
-#### utils
++ utils
 Contains utility functions used by other classes.
-#### checkpoints
++ checkpoints
 Stores checkpoints for model weights in intermediate epochs.
 
 ---
@@ -41,3 +41,14 @@ Argument threshold is for size filtering. Default value is 0, while it was set t
 ```python visualize.py -i 0 -s ../visualization/```
 This operation draws the 3-D volume in the form of 2-D slices from 3 different views.
 The argument i is the index in "data/sys_ucc/annotations/rand_all.txt" of the image being drawn, and s is the fold for saving the drawn images.
+### Tests
+test_model.py prints out model structure and calculates raw memory used (not the actual memory cost of training).  
+test_flow.py tests if model training is runnable with specified batch size.  
+test_data.py draws visualized ground truths on image slices.  
+The rest aren't necessary, dive further only when you're interested.
+
+---
+
+Please checkout https://github.com/TienYiChi/CenterNet_ABUS for older versions.
+
+Original CenterNet: https://github.com/xingyizhou/CenterNet
