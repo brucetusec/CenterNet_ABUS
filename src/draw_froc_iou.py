@@ -1,4 +1,4 @@
-import os, argparse
+import os, argparse, csv
 import numpy as np
 import matplotlib.pyplot as plt
 from operator import add
@@ -22,7 +22,9 @@ def main(args):
     all_thre=build_threshold()
     PERF_per_thre=[]
     PERF_per_thre_iou=[]
+    PERF_per_thre_save=[]
     true_num, true_num_s, true_num_m, true_num_l = 0, 0, 0, 0
+    csv1, csv2, csv3, csv4 = [], [], [], []
 
     for i, score_hit_thre in enumerate(all_thre):
         print('Use threshold: {:.3f}'.format(score_hit_thre))
@@ -105,8 +107,8 @@ def main(args):
             TP_dist_1, FP_dist_1, FN_dist_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1, TP_by_size_10 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 10, scale)
             
-            if FN_dist_1 > 0 and i is 0:
-                print("FN = {}: {}".format(FN_dist_1, line[0]))
+            # if FN_dist_1 > 0 and i is 0:
+            #     print("FN = {}: {}".format(FN_dist_1, line[0]))
 
             TP_table.append(TP)
             FP_table.append(FP)
@@ -136,6 +138,10 @@ def main(args):
             FN_table_iou_1.append(FN_iou_1)
 
             ##########################################
+            csv1.append(['{:.4f}'.format(score_hit_thre), TP, FP, FN, '{:.4f}'.format(TP/(TP+FN)), line[0]])
+            csv2.append(['{:.4f}'.format(score_hit_thre), TP_dist_1, FP_dist_1, FN_dist_1, '{:.4f}'.format(TP_dist_1/(TP_dist_1+FN_dist_1)), line[0]])
+            csv3.append(['{:.4f}'.format(score_hit_thre), TP_iou, FP_iou, FN_iou, '{:.4f}'.format(TP_iou/(TP_iou+FN_iou)), line[0]])
+            csv4.append(['{:.4f}'.format(score_hit_thre), TP_iou_1, FP_iou_1, FN_iou_1, '{:.4f}'.format(TP_iou_1/(TP_iou_1+FN_iou_1)), line[0]])
         
         TP_table_sum = np.array(TP_table)
         FP_table_sum = np.array(FP_table)
@@ -165,12 +171,8 @@ def main(args):
                 sum_FP_dist_1/total_pass])
 
         print('Threshold:{:.3f}'.format(score_hit_thre))
-        print(TP_table_by_size_10, TP_table_by_size_15)
-        print('Dist of Center < 15mm Sen:{:.3f}, Sen_s:{:.3f}, Sen_m:{:.3f}, Sen_l:{:.3f}, FP per pass:{:.3f}'\
-            .format(sensitivity, TP_table_by_size_15[0]/true_num_s, TP_table_by_size_15[1]/true_num_m, TP_table_by_size_15[2]/true_num_l, sum_FP/total_pass))
-        print('Dist of Center < 10mm Sen:{:.3f}, Sen_s:{:.3f}, Sen_m:{:.3f}, Sen_l:{:.3f}, FP per pass:{:.3f}'\
-            .format(sensitivity_dist_1, TP_table_by_size_10[0]/true_num_s, TP_table_by_size_10[1]/true_num_m, TP_table_by_size_10[2]/true_num_l, sum_FP_dist_1/total_pass))
-        print('\n')
+        print('Dist of Center < 15mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity, precision, sum_FP/total_pass))
+        print('Dist of Center < 10mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity_dist_1, precision_dist_1, sum_FP_dist_1/total_pass))
 
         ## IoU ###############################
         
@@ -182,9 +184,9 @@ def main(args):
         FP_table_sum_iou_1 = np.array(FP_table_iou_1)
         FN_table_sum_iou_1 = np.array(FN_table_iou_1)
 
-        sum_TP, sum_FP, sum_FN = TP_table_sum_iou.sum(), FP_table_sum_iou.sum(), FN_table_sum_iou.sum()
-        sensitivity = sum_TP/(sum_TP+sum_FN+1e-10)
-        precision = sum_TP/(sum_TP+sum_FP+1e-10)
+        sum_TP_iou, sum_FP_iou, sum_FN_iou = TP_table_sum_iou.sum(), FP_table_sum_iou.sum(), FN_table_sum_iou.sum()
+        sensitivity_iou = sum_TP_iou/(sum_TP_iou+sum_FN_iou+1e-10)
+        precision_iou = sum_TP_iou/(sum_TP_iou+sum_FP_iou+1e-10)
 
         sum_TP_iou_1, sum_FP_iou_1, sum_FN_iou_1 = TP_table_sum_iou_1.sum(), FP_table_sum_iou_1.sum(), FN_table_sum_iou_1.sum()
         sensitivity_iou_1 = sum_TP_iou_1/(sum_TP_iou_1+sum_FN_iou_1+1e-10)
@@ -194,12 +196,56 @@ def main(args):
             PERF_per_thre_iou.append([
                 score_hit_thre,
                 total_pass,
-                sensitivity,
-                precision,
-                sum_FP/total_pass,
+                sensitivity_iou,
+                precision_iou,
+                sum_FP_iou/total_pass,
                 sensitivity_iou_1,
                 precision_iou_1,
                 sum_FP_iou_1/total_pass])
+
+        print('IoU > 0.25 Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity, precision, sum_FP/total_pass))
+        print('IoU > 0.10 Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity_iou_1, precision_iou_1, sum_FP_iou_1/total_pass))
+        print('\n')
+
+        # performnace_per_thre.append([score_hit_thre,total_pass,
+        # sensitivity, sum_FP/total_pass,
+        # sensitivity_IOU_1, sum_FP_IOU_1/total_pass,
+        # ChonHua_sensitivity, ChonHua_sum_FP/total_pass,
+        # ChonHua_sensitivity_1 8, ChonHua_sum_FP_1/total_pass9,
+        # LUNA_sensitivity10, LUNA_sum_FP/total_pass11,
+        # sen0 12,sen1 13,sen2 14,
+        # big_sen0 15,big_sen1 16,big_sen2 17])
+        PERF_per_thre_save.append([
+            score_hit_thre,total_pass,
+            sensitivity, sum_FP/total_pass,
+            sensitivity_dist_1, sum_FP_dist_1/total_pass,
+            sensitivity_iou, sum_FP_iou/total_pass,
+            sensitivity_iou_1, sum_FP_iou_1/total_pass
+        ])
+
+    PERF_per_thre_save = np.array(PERF_per_thre_save, dtype=float)
+    np.save('performance.npy', PERF_per_thre_save)
+
+    header = ['THRESHOLD', 'TP', 'FP', 'FN', 'SENSITIVITY', 'FILENAME']
+    with open('15mm.csv', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(csv1)
+
+    with open('10mm.csv', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(csv2)
+
+    with open('25percent.csv', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(csv3)
+    
+    with open('10percent.csv', 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(csv4)
 
     data = np.array(PERF_per_thre)
     data_iou = np.array(PERF_per_thre_iou)
@@ -222,8 +268,9 @@ def main(args):
     # axes = plt.gca()
     # axes.set_aspect('auto')
     # axes.set_xlim(0.125, 1.0)
-    plt.xlim(1, 10)
-    x_tick = np.arange(0, 10, 2)
+    plt.xlim(1, 8)
+    x_tick = np.arange(0, 26, 5)
+    #x_tick = np.append(x_tick, 25)
     plt.xticks(x_tick)
     plt.ylim(0.5, 1)
     y_tick = np.arange(0.5, 1, 0.05)
