@@ -14,6 +14,37 @@ def check_boundary(ct):
 def check_size(axis, size):
     return axis[0]*axis[1]*axis[2] > size
 
+def interpolate_FROC_data(froc_x, froc_y, max_fp):
+        y_interpolate = 0
+        take_i = 0
+        for i in range(len(data)):
+            FP = froc_x[i]
+            if FP<=max_fp:
+                take_i = i
+                x1 = FP
+                y1 = froc_y[i]
+                if i>0:
+                    x2 = froc_x[i-1]
+                    y2 = froc_y[i-1]
+
+                    x_interpolate = max_fp
+                    y_interpolate = (y1 * (x2-x_interpolate) + y2 * (x_interpolate-x1)) / (x2-x1)
+                else:
+                    #if no data point for FP > 8
+                    #use sensitivity at FP = FP_small
+                    y_interpolate = y1
+                print("take i = ", i, " FP = ", int(FP*100)/100)
+                print("interpolate sen = ", y_interpolate, " for FP=", max_fp)
+                break
+            else:
+                print("skip i = ", i, " FP = ", int(FP*100)/100)
+        froc_x = froc_x[take_i:]
+        froc_y = froc_y[take_i:]
+
+        if not froc_x[0]==8:
+            froc_x = np.insert(froc_x, 0, 8)
+            froc_y = np.insert(froc_y, 0, y_interpolate)
+        return froc_x, froc_y
 
 def main(args):
     num_npy = os.listdir(npy_dir) # dir is your directory path
@@ -71,7 +102,7 @@ def main(args):
 
             file_name = line[0]
             file_table.append(file_name)
-            
+
             ##########################################
             out_boxes = []
             box_list = np.load(pred_npy)
@@ -94,7 +125,7 @@ def main(args):
 
             TP_IOU_1, FP_IOU_1, FN_IOU_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1, TP_by_size_10 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 10, scale)
-            
+
             if FN_IOU_1 > 0 and i is 0:
                 print("FN = {}: {}".format(FN_IOU_1, line[0]))
 
@@ -122,7 +153,7 @@ def main(args):
             # TP_table_IOU_1_s.append(TP_IOU_1_s)
             # FP_table_IOU_1_s.append(FP_IOU_1_s)
             # FN_table_IOU_1_s.append(FN_IOU_1_s)
-        
+
         TP_table_sum = np.array(TP_table)
         FP_table_sum = np.array(FP_table)
         FN_table_sum = np.array(FN_table)
@@ -189,11 +220,25 @@ def main(args):
 
     plt.rc('font',family='Times New Roman', weight='bold')
 
+
+
+
     if len(data) == 0:
         print('Inference result is empty.')
     else:
-        draw_full(data[..., 7], data[..., 5], '#FF6D6C', 'D < 10 mm', ':', 1, True)
-        draw_full(data[..., 4], data[..., 2], '#FF0000', 'D < 15 mm', '-', 1, True)
+        froc_x, froc_y = interpolate_FROC_data(data[..., 7], data[..., 5], max_fp=8)
+        take_count = len(froc_x[froc_x>0])+1
+        take_count = min(take_count, len(froc_x))
+        froc_x = froc_x[:take_count]
+        froc_y = froc_y[:take_count]
+        draw_full(froc_x, froc_y, '#FF6D6C', 'D < 10 mm', '-.', 1, True)
+
+        froc_x, froc_y = interpolate_FROC_data(data[..., 4], data[..., 2], max_fp=8)
+        take_count = len(froc_x[froc_x>0])+1
+        take_count = min(take_count, len(froc_x))
+        froc_x = froc_x[:take_count]
+        froc_y = froc_y[:take_count]
+        draw_full(froc_x, froc_y, '#FF0000', 'D < 15 mm', '-', 1, True)
 
     # if len(data_s) == 0:
     #     print('Inference result for small is empty.')
@@ -204,8 +249,7 @@ def main(args):
     # axes = plt.gca()
     # axes.axis([0, 10, 0.5, 1])
     # axes.set_aspect('auto')
-    plt.xlim(1, 10)
-    x_tick = np.arange(0, 10, 2)
+    x_tick = np.arange(0, 10, 2).astype(np.float)
     plt.xticks(x_tick)
     plt.ylim(0.5, 1)
     y_tick = np.arange(0.5, 1, 0.05)
@@ -226,11 +270,25 @@ def _parse_args():
         '--threshold', type=float, default=0,
         help='Threshold for size filtering.'
     )
+    parser.add_argument(
+        '--root', '-r', type=str, required=True,
+        help='folder path for data/sys_ucc/'
+    )
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
+
     npy_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'results/prediction/')
+    npy_format = npy_dir + '{}'
+
+    #npy_dir = '/data/Hiola/YOLOv4-pytorch/data/pred_result/evaluate/'
+    #npy_format = npy_dir + '{}_0.npy'
+    #FCOS
+    #npy_dir = '/data/bruce/FCOS_3D/FCOS/debug_evaluate/'
+    #npy_format = npy_dir + '{}_0.npy'
+
     args = _parse_args()
+    root = args.root
     main(args)
