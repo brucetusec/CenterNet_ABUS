@@ -5,37 +5,16 @@ from utils.heatmap import gen_3d_heatmap, gen_3d_hw
 from torch.utils import data
 
 class AbusNpyFormat(data.Dataset):
-    def __init__(self, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False, include_fp=False):
+    def __init__(self, testing_mode, root, crx_valid=False, crx_fold_num=0, crx_partition='train', augmentation=False, include_fp=False):
         self.root = root
-        if include_fp:
-            print('FP training mode...')
-            with open(self.root + 'annotations/fp_{}.txt'.format(crx_fold_num), 'r') as f:
-                lines = f.read().splitlines()
-        else:
-            print('Normal mode....')
-            with open(self.root + 'annotations/rand_all.txt', 'r') as f:
-                lines = f.read().splitlines()
-
-        folds = []
-        self.gt = []      
-        if crx_valid:
-            for fi in range(5):
-                if fi == 4:
-                    folds.append(lines[int(fi*0.2*len(lines)):])
-                else:
-                    folds.append(lines[int(fi*0.2*len(lines)):int((fi+1)*0.2*len(lines))])
-
-            cut_set = folds.pop(crx_fold_num)
-            if crx_partition == 'train':
-                for li in folds:
-                    self.gt += li
-            elif crx_partition == 'valid':
-                self.gt = cut_set
-            else:
-                for li in folds:
-                    self.gt += li
-        else:
-            self.gt = lines
+        fold_list_root = '/data/bruce/CenterNet_ABUS/5_fold_list/'
+        file_part = 'val' if crx_partition=='valid' else crx_partition
+        if testing_mode==1 and file_part=='val':
+            file_part = 'test'
+        fold_list_file = fold_list_root + 'five_fold_{}_{}.txt'.format(file_part, crx_fold_num)
+        with open(fold_list_file, 'r') as f:
+            self.gt = f.read().splitlines()
+        self.gt = [_.replace('/home/lab402/User/eason_thesis/ABUS_data/', '') for _ in self.gt]
 
         self.set_size = len(self.gt)
         self.aug = augmentation
@@ -63,7 +42,7 @@ class AbusNpyFormat(data.Dataset):
         ori_data = torch.from_numpy(ori_data)
         ori_data = torch.transpose(ori_data, 0, 2).contiguous()
         ori_data = ori_data.view(1,self.img_size[0],self.img_size[1],self.img_size[2]).to(torch.float32)
-        
+
         true_boxes = line[-1].split(' ')
         true_boxes = list(map(lambda box: box.split(','), true_boxes))
         true_boxes = [list(map(int, box)) for box in true_boxes]

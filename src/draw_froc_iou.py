@@ -36,7 +36,7 @@ def main(args):
         # , score_table, mean_score_table, std_score_table
         TP_table_iou, FP_table_iou, FN_table_iou, \
         TP_table_iou_1, FP_table_iou_1, FN_table_iou_1 = [], [], [], [], [], []
-        
+
         TP_table_by_size_15 = [0,0,0]
         TP_table_by_size_10 = [0,0,0]
 
@@ -83,7 +83,7 @@ def main(args):
 
             file_name = line[0]
             file_table.append(file_name)
-            
+
             ##########################################
             out_boxes = []
             box_list = np.load(pred_npy)
@@ -106,7 +106,7 @@ def main(args):
 
             TP_dist_1, FP_dist_1, FN_dist_1, hits_index_IOU_1, hits_iou_IOU_1, hits_score_IOU_1, TP_by_size_10 = eval_precision_recall_by_dist(
                 out_boxes, true_box, 10, scale)
-            
+
             # if FN_dist_1 > 0 and i is 0:
             #     print("FN = {}: {}".format(FN_dist_1, line[0]))
 
@@ -142,7 +142,7 @@ def main(args):
             csv2.append(['{:.4f}'.format(score_hit_thre), TP_dist_1, FP_dist_1, FN_dist_1, '{:.4f}'.format(TP_dist_1/(TP_dist_1+FN_dist_1)), line[0]])
             csv3.append(['{:.4f}'.format(score_hit_thre), TP_iou, FP_iou, FN_iou, '{:.4f}'.format(TP_iou/(TP_iou+FN_iou)), line[0]])
             csv4.append(['{:.4f}'.format(score_hit_thre), TP_iou_1, FP_iou_1, FN_iou_1, '{:.4f}'.format(TP_iou_1/(TP_iou_1+FN_iou_1)), line[0]])
-        
+
         TP_table_sum = np.array(TP_table)
         FP_table_sum = np.array(FP_table)
         FN_table_sum = np.array(FN_table)
@@ -175,7 +175,7 @@ def main(args):
         print('Dist of Center < 10mm Sen:{:.3f}, Pre:{:.3f}, FP per pass:{:.3f}'.format(sensitivity_dist_1, precision_dist_1, sum_FP_dist_1/total_pass))
 
         ## IoU ###############################
-        
+
         TP_table_sum_iou = np.array(TP_table_iou)
         FP_table_sum_iou = np.array(FP_table_iou)
         FN_table_sum_iou = np.array(FN_table_iou)
@@ -241,7 +241,7 @@ def main(args):
         writer = csv.writer(f)
         writer.writerow(header)
         writer.writerows(csv3)
-    
+
     with open('10percent.csv', 'w') as f:
         writer = csv.writer(f)
         writer.writerow(header)
@@ -263,15 +263,15 @@ def main(args):
     else:
        draw_full(data_iou[..., 4], data_iou[..., 2], '#6D6CFF', 'IoU > 0.25', ':', 1, True)
        draw_full(data_iou[..., 7], data_iou[..., 5], '#0000FF', 'IoU > 0.10', '-', 1, True)
-       
+
 
     # axes = plt.gca()
     # axes.set_aspect('auto')
     # axes.set_xlim(0.125, 1.0)
-    plt.xlim(1, 8)
-    x_tick = np.arange(0, 26, 5)
+    ##########################plt.xlim(1, 8)
+    ##########################x_tick = np.arange(0, 26, 5)
     #x_tick = np.append(x_tick, 25)
-    plt.xticks(x_tick)
+    ##########################plt.xticks(x_tick)
     plt.ylim(0.5, 1)
     y_tick = np.arange(0.5, 1, 0.05)
     y_tick = np.append(y_tick, 0.98)
@@ -291,11 +291,15 @@ def _parse_args():
         '--threshold', type=float, default=0,
         help='Threshold for size filtering.'
     )
+    parser.add_argument(
+        '--root', '-r', type=str, required=True,
+        help='folder path for data/sys_ucc/'
+    )
     return parser.parse_args()
 
-
 if __name__ == '__main__':
-    root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
-    npy_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'results/prediction/')
     args = _parse_args()
+    root = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/sys_ucc/')
+    root = args.root
+    npy_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'results/prediction/')
     main(args)

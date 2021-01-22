@@ -18,7 +18,7 @@ def loadFileInformation(filename):
     return [float(ds.SpacingBetweenSlices), float(ds.PixelSpacing[0]), float(ds.PixelSpacing[1])]
 
 
-def AUC(froc_x, froc_y, x_limit, normalize=False):
+def AUC(froc_x, froc_y, x_limit=None, normalize=False):
     froc_x = np.array(froc_x)
     froc_y = np.array(froc_y)
 
@@ -38,7 +38,7 @@ def draw_full(froc_x, froc_y, color, label, linestyle, x_limit, normalize=False)
 
 def build_threshold():
     thresholds = []
-    
+
     tmp=0
     for i in range(0, 395):
         thresholds.append(tmp)
@@ -47,7 +47,7 @@ def build_threshold():
     # for i in range(0, 75):
     #     thresholds.append(tmp)
     #     tmp += 0.01
-     
+
     return thresholds
 
 
@@ -61,5 +61,3 @@ def categorize_by_size(box):
         return (0,0,1)
     else:
         return (0,1,0)
-
-

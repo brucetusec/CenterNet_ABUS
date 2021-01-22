@@ -9,3 +9,9 @@ src/*.png
 *pyc
 *_old.py
 dicom
+checkpoints/
+*.csv
+*.png
+train_hist*.npy
+5_fold_list/
+

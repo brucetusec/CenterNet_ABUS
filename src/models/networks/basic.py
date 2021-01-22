@@ -9,11 +9,14 @@ class BasicModule(nn.Module):
 
     def load(self, path, ep):
         #path = path + self.model_name + '_' + str(ep)
-        path =  path + 'hourglass_' + str(ep)
+        path =  path + str(ep) + '.pth'
         self.load_state_dict(torch.load(path))
 
-    def save(self, name=None):
-        prefix = 'checkpoints/' + 'hourglass_'
+    def save(self, name=None, prefix=None):
+        if prefix:
+            pass
+        else:
+            prefix = 'checkpoints/' + 'hourglass_'
         '''
         e.g. AlexNet_0710_23:57:29.pth
         '''
@@ -21,6 +24,6 @@ class BasicModule(nn.Module):
             name = time.strftime(prefix + '%m%d_%H:%M:%S.pth')
         else:
             name = prefix + name
-            
+
         torch.save(self.state_dict(), name)
         return name
